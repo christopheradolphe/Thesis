@@ -17,6 +17,8 @@ vix_data = pd.read_csv('vixdata.csv', parse_dates=['dt'], index_col='dt')
 if vix_data['vix'].isnull().sum() != 0:
   vix_data.dropna(subset= ['vix'], inplace=True)
 
+
+
 #Stationarity Check
 stationarity_check = adfuller(vix_data['vix'])
 print("ADF Statistic: ", stationarity_check[0])
@@ -25,11 +27,13 @@ if stationarity_check[1] > 0.05:
   print("Data does not fulfill stationarity")
   exit(-1)
 
-#Fit the AR model
-start_date = vix_data.index.get_loc('1990-01-02')
-end_date = vix_data.index.get_loc('2015-12-31')
 
-model_params = AutoReg(vix_data['vix'].iloc[start_date:end_date+1], lags=1)
+
+#Fit the AR model
+in_sample_start_date = vix_data.index.get_loc('1990-01-02')
+in_sample_end_date = vix_data.index.get_loc('2015-12-31')
+
+model_params = AutoReg(vix_data['vix'].iloc[in_sample_start_date:in_sample_end_date+1], lags=1)
 model_fit = model_params.fit()
 print(model_fit.summary())
 
@@ -38,6 +42,8 @@ print(model_fit.summary())
 # residuals = model_fit.resid
 # plt.plot(residuals)
 # plt.show()
+
+
 
 #2. a) For each day in the data, use your model to 
 # calculate a 21-trading-day-ahead forecast of the VIX.  
