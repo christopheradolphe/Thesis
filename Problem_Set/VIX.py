@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.ar_model import AutoReg
+from sklearn.metrics import r2_score
 
 #1. Estimate an AR(1) time series model of the VIX using data from 1990-2015.
 
@@ -40,9 +41,14 @@ print(model_fit.summary())
 forecast_days = 21
 forecasts = []
 
-for i in range(1, len(vix_data)):
-  forecast = model_fit.predict(start=i, end =len(vix_data) + forecast_days)
 
-forecast_df = pd.DataFrame(forecasts, index=vix_data.index[:-forecast_days], columns=vix_data.index[1:1 + forecast_days])
+for i in range(1, len(vix_data)):
+  forecast = model_fit.predict(start=i, end = max(i+forecast_days - 1, len(vix_data)))[:21]
+  forecasts.append(forecast.values)
+
+forecast_df = pd.DataFrame(forecasts, index=vix_data.index[1:], columns=vix_data.index[1:1+forecast_days])
 
 print(forecast_df.head())
+
+#2b) R-squared for in sample predictions
+
