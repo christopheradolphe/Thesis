@@ -1,6 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller
+from statsmodels.tsa.ar_model import AutoReg
+
+#1. Estimate an AR(1) time series model of the VIX using data from 1990-2015.
 
 #Loading excel VIX Data
 vix_data = pd.read_csv('vixdata.csv', parse_dates=['dt'], index_col='dt')
@@ -21,3 +24,25 @@ if stationarity_check[1] > 0.05:
   print("Data does not fulfill stationarity")
   exit(-1)
 
+#Fit the AR model
+model = AutoReg(vix_data['vix'], lags=1)
+model_fit = model.fit()
+print(model_fit.summary())
+
+
+# #Check residuals
+# residuals = model_fit.resid
+# plt.plot(residuals)
+# plt.show()
+
+#2. a) For each day in the data, use your model to 
+# calculate a 21-trading-day-ahead forecast of the VIX.  
+forecast_days = 21
+forecasts = []
+
+for i in range(1, len(vix_data)):
+  forecast = model_fit.predict(start=i, end =len(vix_data) + forecast_days)
+
+forecast_df = pd.DataFrame(forecasts, index=vix_data.index[:-forecast_days], columns=vix_data.index[1:1 + forecast_days])
+
+print(forecast_df.head())
