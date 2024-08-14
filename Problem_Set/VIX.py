@@ -32,6 +32,8 @@ if stationarity_check[1] > 0.05:
 #Fit the AR model
 in_sample_start_date = vix_data.index.get_loc('1990-01-02')
 in_sample_end_date = vix_data.index.get_loc('2015-12-31')
+out_sample_start_date = vix_data.index.get_loc('2016-01-04')
+out_sample_end_date = vix_data.index.get_loc("2024-02-16")
 
 model_params = AutoReg(vix_data['vix'].iloc[in_sample_start_date:in_sample_end_date+1], lags=1)
 model_fit = model_params.fit()
