@@ -26,8 +26,8 @@ if stationarity_check[1] > 0.05:
   exit(-1)
 
 #Fit the AR model
-model = AutoReg(vix_data['vix'], lags=1)
-model_fit = model.fit()
+model_params = AutoReg(vix_data['vix'], lags=1)
+model_fit = model_params.fit()
 print(model_fit.summary())
 
 
@@ -42,13 +42,17 @@ forecast_days = 21
 forecasts = []
 
 
-for i in range(1, len(vix_data)):
-  forecast = model_fit.predict(start=i, end = max(i+forecast_days - 1, len(vix_data)))[:21]
-  forecasts.append(forecast.values)
+# for i in range(1, len(vix_data)):
+#   forecast = model_fit.predict(start=i, end = max(i+forecast_days - 1, len(vix_data)))[:21]
+#   forecasts.append(forecast.values)
 
-forecast_df = pd.DataFrame(forecasts, index=vix_data.index[1:], columns=vix_data.index[1:1+forecast_days])
+# forecast_df = pd.DataFrame(forecasts, index=vix_data.index[1:], columns=vix_data.index[1:1+forecast_days])
 
-print(forecast_df.head())
+# print(forecast_df.head())
 
 #2b) R-squared for in sample predictions
+in_sample_forecast = model_fit.predict(start=0, end=len(vix_data))
+
+in_sample_r2 = r2_score(vix_data['vix'], in_sample_forecast[:-1])
+print("In Sample R-Squared: ", in_sample_r2)
 
