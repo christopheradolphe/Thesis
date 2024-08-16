@@ -18,10 +18,18 @@ print(pg_returns.head())
 print(gspc_returns.head())
 
 #Remove NaN values (eg. first row)
-msft_returns.dropna()
-pg_returns.dropna()
-gspc_returns.dropna()
+msft_returns = msft_returns.dropna()
+pg_returns = pg_returns.dropna()
+gspc_returns = gspc_returns.dropna()
 
 print(msft_returns.head())
 print(pg_returns.head())
 print(gspc_returns.head())
+
+combined_returns = pd.DataFrame({
+    'MSFT': msft_returns,
+    'PG': pg_returns,
+    'GSPC': gspc_returns
+})
+
+print(combined_returns.head())
