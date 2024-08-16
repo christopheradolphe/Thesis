@@ -51,3 +51,10 @@ summary_table = pd.DataFrame({
 print(summary_table)
 
 #Estimate Full Sample CAPM betas (with standard errors)
+
+#1. Add constant to market (GSPC)
+market_returns_with_const = sm.add_constant(gspc_returns)
+
+#2. Individual Stock regressions
+msft_model = sm.OLS(msft_returns, market_returns_with_const).fit()
+pg_model = sm.OLS(pg_returns, market_returns_with_const).fit()
