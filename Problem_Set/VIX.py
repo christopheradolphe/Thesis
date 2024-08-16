@@ -86,3 +86,9 @@ out_sample_r2 = r2_score(vix_data['vix'].iloc[out_sample_start_date:], forecast[
 print("In Sample R-Squared: ", in_sample_r2)
 print("\nOut of Sample R-Squared: ", out_sample_r2)
 
+
+
+
+#Part 2
+
+
