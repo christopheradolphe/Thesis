@@ -58,3 +58,12 @@ market_returns_with_const = sm.add_constant(gspc_returns)
 #2. Individual Stock regressions
 msft_model = sm.OLS(msft_returns, market_returns_with_const).fit()
 pg_model = sm.OLS(pg_returns, market_returns_with_const).fit()
+
+#Extract CAPM BETAS and Standard Errors
+msft_beta = msft_model.params['Adj Close']
+msft_se = msft_model.bse['Adj Close']
+print(f"Microsoft CAPM Values:\n Beta: {msft_beta}\n  Standard Error: {msft_se}")
+
+pg_beta = pg_model.params['Adj Close']
+pg_se = pg_model.bse['Adj Close']
+print(f"PG CAPM Values:\n Beta: {pg_beta}\n  Standard Error: {pg_se}")
