@@ -17,15 +17,20 @@ vix_data = pd.read_csv('vixdata.csv', parse_dates=['dt'], index_col='dt')
 if vix_data['vix'].isnull().sum() != 0:
   vix_data.dropna(subset= ['vix'], inplace=True)
 
-
-
 #Stationarity Check
-stationarity_check = adfuller(vix_data['vix'])
-print("ADF Statistic: ", stationarity_check[0])
-print("p-value: ", stationarity_check[1])
-if stationarity_check[1] > 0.05:
+adf_test = adfuller(vix_data['vix'])
+print("ADF Test Results")
+print("Null Hypothesis Testing for a Unit Root")
+print("ADF Statistic: ", adf_test[0])
+print("p-value: ", adf_test[1])
+print("Number of lags: ", adf_test[2])
+print("Number of observations: ", adf_test[3])
+print("Critical Values: ", adf_test[4])
+if adf_test[1] > 0.05:
   print("Data does not fulfill stationarity")
   exit(-1)
+else:
+  print("P-value is less than 0.05 so we can reject null hypothesis and data is stationary")
 
 
 
@@ -33,7 +38,7 @@ if stationarity_check[1] > 0.05:
 in_sample_start_date = vix_data.index.get_loc('1990-01-02')
 in_sample_end_date = vix_data.index.get_loc('2015-12-31')
 out_sample_start_date = vix_data.index.get_loc('2016-01-04')
-out_sample_end_date = vix_data.index.get_loc("2024-02-16")
+out_sample_end_date = vix_data.index.get_loc('2020-02-18')
 
 model_params = AutoReg(vix_data['vix'].iloc[in_sample_start_date:in_sample_end_date+1], lags=1)
 model_fit = model_params.fit()
@@ -62,9 +67,13 @@ forecasts = []
 # print(forecast_df.head())
 
 #2b) R-squared for in sample predictions
-in_sample_forecast = model_fit.predict(start=0, end=len(vix_data))
-out_sample_forecast = model_fit.predict(start=len(vix_data), end=)
+forecast = model_fit.predict(start=0, end=len(vix_data)-1)
+forecast.plot()
+vix_data.plot()
+plt.show()
 
-in_sample_r2 = r2_score(vix_data['vix'].iloc[1:], in_sample_forecast[1:-1])
+in_sample_r2 = r2_score(vix_data['vix'].iloc[1:in_sample_end_date+1], forecast[1:in_sample_end_date+1])
+out_sample_r2 = r2_score(vix_data['vix'].iloc[out_sample_start_date:], forecast[out_sample_start_date:])
 print("In Sample R-Squared: ", in_sample_r2)
+print("\nOut of Sample R-Squared: ", out_sample_r2)
 
