@@ -36,6 +36,8 @@ print(combined_returns.head())
 
 #Calculate Mean of Returns
 mean_returns = combined_returns.mean()
+
+#Standard Deviation
 standard_deviation_returns = combined_returns.std()
 
 #Create dataframe for output of data
