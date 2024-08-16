@@ -8,15 +8,16 @@ from sklearn.metrics import r2_score
 
 #Loading excel VIX Data
 vix_data = pd.read_csv('vixdata.csv', index_col='dt')
+
+#Remove empty vix data
+vix_data.dropna(subset= ['vix'], inplace=True)
+
+#Preview Data
 print(vix_data.head())
 
 #Plot the vix data
-# vix_data.plot(title = "VIX data")
-# plt.show()
-
-#Remove empty vix data
-if vix_data['vix'].isnull().sum() != 0:
-  vix_data.dropna(subset= ['vix'], inplace=True)
+vix_data.plot(title = "VIX data")
+plt.show()
 
 #Stationarity Check
 adf_test = adfuller(vix_data['vix'])
@@ -26,8 +27,11 @@ print("ADF Statistic: ", adf_test[0])
 print("p-value: ", adf_test[1])
 print("Number of lags: ", adf_test[2])
 print("Number of observations: ", adf_test[3])
-print("Critical Values: ", adf_test[4])
-if adf_test[1] > 0.05:
+print("Critical Values: ", adf_test[4].values())
+print(list(adf_test[4].values()))
+print(adf_test[0])
+print(list(adf_test[4].values())[0], type(list(adf_test[4].values())[0]))
+if adf_test[1] > 0.05 or any(adf_test[0] > value for value in list(adf_test[4].values())):
   print("Data does not fulfill stationarity")
   exit(-1)
 else:
@@ -68,9 +72,9 @@ forecasts = []
 # print(forecast_df.head())
 
 #2b) R-squared for in sample predictions
-forecast = model_fit.predict(start=0, end=len(vix_data)-1)
-forecast.plot()
-vix_data.plot()
+forecast = model_fit.predict(start=in_sample_start_date, end=out_sample_end_date)
+forecast.plot(label='Forecasted VIX Data')
+vix_data['vix'].plot(label='Actual VIX Data')
 plt.show()
 
 in_sample_r2 = r2_score(vix_data['vix'].iloc[1:in_sample_end_date+1], forecast[1:in_sample_end_date+1])
