@@ -67,3 +67,21 @@ print(f"Microsoft CAPM Values:\n Beta: {msft_beta}\n Standard Error: {msft_se}")
 pg_beta = pg_model.params['Adj Close']
 pg_se = pg_model.bse['Adj Close']
 print(f"PG CAPM Values:\n Beta: {pg_beta}\n Standard Error: {pg_se}")
+
+#Part 2
+weights = pd.Series([0.5, 0.5], index=['MSFT', 'PG'])
+
+portfolio_returns = []
+
+combined_returns.index = pd.to_datetime(combined_returns.index)
+
+for year in combined_returns.index.year.unique():
+  yearly_returns = combined_returns[combined_returns.index.year == year]
+
+  for date in yearly_returns.index:
+    #Find daily return
+    # Update weights based on the returns
+    portfolio_value = (weights * (1 + yearly_returns.loc[date])).sum()  # Update portfolio value
+    weights = (weights * (1 + yearly_returns.loc[date])) / portfolio_value  # Update weights
+  
+  weights = pd.Series([0.5, 0.05], index=['MSFT', 'PG'])
