@@ -43,7 +43,7 @@ else:
 in_sample_start_date = vix_data.index.get_loc('1990-01-02')
 in_sample_end_date = vix_data.index.get_loc('2015-12-31')
 out_sample_start_date = vix_data.index.get_loc('2016-01-04')
-out_sample_end_date = vix_data.index.get_loc('2020-02-18')
+out_sample_end_date = vix_data.index.get_loc('2024-02-16')
 
 model_params = AutoReg(vix_data['vix'].iloc[in_sample_start_date:in_sample_end_date+1], lags=1)
 model_fit = model_params.fit()
@@ -75,6 +75,10 @@ forecasts = []
 forecast = model_fit.predict(start=in_sample_start_date, end=out_sample_end_date)
 forecast.plot(label='Forecasted VIX Data')
 vix_data['vix'].plot(label='Actual VIX Data')
+plt.xlabel('Date')
+plt.ylabel('VIX')
+plt.title("Actual vs Forecasted VIX Data")
+plt.legend()
 plt.show()
 
 in_sample_r2 = r2_score(vix_data['vix'].iloc[1:in_sample_end_date+1], forecast[1:in_sample_end_date+1])
