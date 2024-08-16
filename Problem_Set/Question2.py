@@ -1,4 +1,5 @@
 import pandas as pd
+import statsmodels.api as sm
 
 symbols = ['MSFT', 'PG', 'GSPC']
 start_date = '2010-01-01'
@@ -48,3 +49,5 @@ summary_table = pd.DataFrame({
 
 #Print data
 print(summary_table)
+
+#Estimate Full Sample CAPM betas (with standard errors)
