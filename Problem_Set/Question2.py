@@ -33,3 +33,16 @@ combined_returns = pd.DataFrame({
 })
 
 print(combined_returns.head())
+
+#Calculate Mean of Returns
+mean_returns = combined_returns.mean()
+standard_deviation_returns = combined_returns.std()
+
+#Create dataframe for output of data
+summary_table = pd.DataFrame({
+  "Mean Return" : mean_returns,
+  "Standard Deviation" : standard_deviation_returns
+})
+
+#Print data
+print(summary_table)
