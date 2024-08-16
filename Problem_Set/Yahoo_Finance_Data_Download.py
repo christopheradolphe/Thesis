@@ -1,3 +1,8 @@
+import os
+import yfinance as yf
+
+start_date = '2010-01-01'
+tickers = ['MSFT', 'PG', '^GSPC']
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
 for ticker in tickers:
