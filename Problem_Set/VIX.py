@@ -90,5 +90,6 @@ print("\nOut of Sample R-Squared: ", out_sample_r2)
 
 
 #Part 2
-
+symbols = ['MSFT', 'PG', '^GSPC']
+start_date = '2010-01-01'
 
