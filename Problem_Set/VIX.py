@@ -7,7 +7,8 @@ from sklearn.metrics import r2_score
 #1. Estimate an AR(1) time series model of the VIX using data from 1990-2015.
 
 #Loading excel VIX Data
-vix_data = pd.read_csv('vixdata.csv', parse_dates=['dt'], index_col='dt')
+vix_data = pd.read_csv('vixdata.csv', index_col='dt')
+print(vix_data.head())
 
 #Plot the vix data
 # vix_data.plot(title = "VIX data")
