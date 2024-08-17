@@ -95,7 +95,8 @@ for year in combined_returns.index.year.unique():
   weights['PG'] = rebalanced_value
 
 #Final Portfolio Value
-print(f'Final Portfolio Value: {portfolio_value_df.loc}')
+final_value = portfolio_value_df.iloc[-1]['Portfolio Value']
+print(f'Final Portfolio Value: {final_value}')
 
 #Calculate Daily Portfolio Returns
 portfolio_returns = portfolio_value_df['Portfolio Value'].pct_change().dropna()
@@ -104,6 +105,14 @@ print(portfolio_returns.head())
 
 #Mean Return
 mean_return = portfolio_returns.mean()
+print(f'Mean Portfolio Return: {mean_return}')
 
 #Standard Deviation
 std_return = portfolio_returns.std()
+print(f'Standard Dev Portfolio Return: {std_return}')
+
+#Find CAPM model values
+rebalanced_portfolio_model = sm.OLS(portfolio_returns, market_returns_with_const).fit()
+portfolio_beta = rebalanced_portfolio_model.params['Portfolio Value']
+portfolio_se = rebalanced_portfolio_model.bse['Portfolio Value']
+print(f"Rebalanced Portfolio CAPM Values:\n Beta: {msft_beta}\n Standard Error: {msft_se}")
