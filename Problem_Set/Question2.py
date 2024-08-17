@@ -70,7 +70,7 @@ print(f"PG CAPM Values:\n Beta: {pg_beta}\n Standard Error: {pg_se}")
 
 #Part 2
 # Portfolio starts at value of 1 and rebalances to 50% of total every year
-initial_weights = pd.Series([0.5, 0.5], index=['MSFT', 'PG'])
+weights = pd.Series([0.5, 0.5], index=['MSFT', 'PG'])
 
 
 combined_returns.index = pd.to_datetime(combined_returns.index)
@@ -87,6 +87,23 @@ for year in combined_returns.index.year.unique():
     weights = (weights * (1 + yearly_returns.loc[date]))
     portfolio_value = weights.sum()
 
+    weights_df.loc[date] = weights
+    portfolio_value_df.loc[date] = portfolio_value
+
   rebalanced_value = weights.sum() / 2
   weights['MSFT'] = rebalanced_value
   weights['PG'] = rebalanced_value
+
+#Final Portfolio Value
+print(f'Final Portfolio Value: {portfolio_value_df.loc}')
+
+#Calculate Daily Portfolio Returns
+portfolio_returns = portfolio_value_df['Portfolio Value'].pct_change().dropna()
+
+print(portfolio_returns.head())
+
+#Mean Return
+mean_return = portfolio_returns.mean()
+
+#Standard Deviation
+std_return = portfolio_returns.std()
