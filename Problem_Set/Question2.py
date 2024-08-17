@@ -69,11 +69,14 @@ pg_se = pg_model.bse['Adj Close']
 print(f"PG CAPM Values:\n Beta: {pg_beta}\n Standard Error: {pg_se}")
 
 #Part 2
-weights = pd.Series([0.5, 0.5], index=['MSFT', 'PG'])
+# Portfolio starts at value of 1 and rebalances to 50% of total every year
+initial_weights = pd.Series([0.5, 0.5], index=['MSFT', 'PG'])
 
-portfolio_returns = []
 
 combined_returns.index = pd.to_datetime(combined_returns.index)
+
+weights_df = pd.DataFrame(index=combined_returns.index, columns =['MSFT', 'PG'])
+portfolio_value_df = pd.DataFrame(index=combined_returns.index, columns=['Portfolio Value'])
 
 for year in combined_returns.index.year.unique():
   yearly_returns = combined_returns[combined_returns.index.year == year]
@@ -81,7 +84,9 @@ for year in combined_returns.index.year.unique():
   for date in yearly_returns.index:
     #Find daily return
     # Update weights based on the returns
-    portfolio_value = (weights * (1 + yearly_returns.loc[date])).sum()  # Update portfolio value
-    weights = (weights * (1 + yearly_returns.loc[date])) / portfolio_value  # Update weights
-  
-  weights = pd.Series([0.5, 0.05], index=['MSFT', 'PG'])
+    weights = (weights * (1 + yearly_returns.loc[date]))
+    portfolio_value = weights.sum()
+
+  rebalanced_value = weights.sum() / 2
+  weights['MSFT'] = rebalanced_value
+  weights['PG'] = rebalanced_value
