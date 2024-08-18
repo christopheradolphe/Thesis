@@ -6,6 +6,7 @@ from sklearn.metrics import r2_score
 from statsmodels.graphics.tsaplots import plot_pacf,plot_acf
 
 # 1. Estimate an AR(1) time series model of the VIX using data from 1990-2015.
+print("1. Estimate an AR(1) time series model of the VIX using data from 1990-2015.")
 
 #Load excel VIX Data into pandas dataframe
 vix_data = pd.read_csv('vixdata.csv', index_col='dt', parse_dates=True)
@@ -43,7 +44,8 @@ beta = model_fit.params['vix.L1']
 
 
 
-#2. For each day in the data, use your model to calculate a 21-trading-day-ahead forecast of the VIX.  
+# 2a) For each day in the data, use your model to calculate a 21-trading-day-ahead forecast of the VIX.  
+print("For each day in the data, use your model to calculate a 21-trading-day-ahead forecast of the VIX")
 
 # Using .predict() 
 # forecast_21_day_in_sample = []
@@ -81,6 +83,7 @@ forecast_21_day_out_sample = pd.Series(forecast_21_day_out_sample, index=out_sam
 
 # 2b) What is the R-squared of the realized VIX on your forecast value in sample (over 1990-2015)?  
 #     What about out-of-sample (2016-most recent data)?
+print("What is the R-squared of the realized VIX on your forecast value in sample (over 1990-2015)? What about out-of-sample (2016-most recent data)?")
 
 in_sample_r2 = r2_score(in_sample_data.iloc[22:], forecast_21_day_in_sample)
 print("In Sample R-Squared: ", in_sample_r2)
@@ -89,7 +92,10 @@ print("Out Sample R-Squared: ", out_sample_r2)
 
 
 
-#3) Plot forecasted compared to each other for observations
+#3) Write a paragraph summarizing your observations.  How does your results in (2) compare to (1)?
+print("Write a paragraph summarizing your observations.  How does your results in (2) compare to (1)?")
+
+# Plot forecasted compared to each other for observations
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14, 6))
 
 # Plot the in-sample data (actual and forecasted)
@@ -112,7 +118,8 @@ plt.tight_layout()
 plt.show()
 
 
-"""
+print(
+  """
 Summary of Findings:
 The AR(1) model, estimated using VIX data from 1990-2015, achieved an in-sample R-squared of 
 0.64, indicating a reasonable fit. However, the out-of-sample R-squared dropped to 0.345, 
@@ -127,3 +134,4 @@ dynamics. Additionally, incorporating exogenous variables like macroeconomic fac
 indices could enhance the model’s predictive power.
 
 """
+)

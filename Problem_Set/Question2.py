@@ -2,6 +2,7 @@ import pandas as pd
 import statsmodels.api as sm
 
 # 1a) Calculate a series of returns (1+Return(t) = AdjClose(t) / AdjClose(t-1)). 
+print("1a) Calculate a series of returns (1+Return(t) = AdjClose(t) / AdjClose(t-1)). \n")
 
 symbols = ['MSFT', 'PG', 'GSPC']
 start_date = '2010-01-01'
@@ -22,6 +23,7 @@ pg_returns = pg_returns.dropna()
 gspc_returns = gspc_returns.dropna()
 
 # 1b) What are the mean and standard deviation of returns for each symbol?
+print("1b) What are the mean and standard deviation of returns for each symbol?\n")
 
 #Combine the dataframes for calculations
 combined_returns = pd.DataFrame({
@@ -46,6 +48,7 @@ summary_table = pd.DataFrame({
 print(summary_table)
 
 # 1c) What are the estimated full-sample CAPM betas (and their standard errors) of MSFT and PG?
+print("1c) What are the estimated full-sample CAPM betas (and their standard errors) of MSFT and PG?\n")
 
 # Add constant to market (GSPC)
 market_returns_with_const = sm.add_constant(gspc_returns)
@@ -67,6 +70,7 @@ print(f"PG CAPM Values:\n Beta: {pg_beta:.4f}\n Standard Error: {pg_se:.4f}")
 
 # 2a) Calculate the returns to a portfolio of MSFT and PG that rebalances to 50%/50% 
 #     weights at the start of January. 
+print("2a) Calculate the returns to a portfolio of MSFT and PG that rebalances to 50%/50% weights at the start of January. ")
 
 # Portfolio starts at value of 1 and rebalances to 50% of total every year
 weights = pd.Series([0.5, 0.5], index=['MSFT', 'PG'])
@@ -103,14 +107,15 @@ print(f'Final Portfolio Value: {final_value * 100:.2f}% of Principal Investment'
 portfolio_returns = portfolio_value_df['Portfolio Value'].pct_change().dropna()
 
 # 2b) What are the mean and standard deviation of returns of this portfolio?
+print("2b) What are the mean and standard deviation of returns of this portfolio?")
 
 #Mean Return of Returns of Rebalanced Portfolio
 mean_return = portfolio_returns.mean()
-print(f'Mean Portfolio Return: {mean_return:.6f}')
+print(f'Mean Portfolio Return of Rebalanced Portfolio: {mean_return:.6f}')
 
 #Standard Deviation of Returns of Rebalanced Portfolio
 std_return = portfolio_returns.std()
-print(f'Standard Dev Portfolio Return: {std_return:.4f}')
+print(f'Standard Deviation of Rebalanced Portfolio Portfolio Return: {std_return:.4f}')
 
 # 2c) What is the estimated CAPM beta and its standard error?
 
@@ -120,8 +125,8 @@ portfolio_beta = rebalanced_portfolio_model.params['Adj Close']
 portfolio_se = rebalanced_portfolio_model.bse['Adj Close']
 print(f"Rebalanced Portfolio CAPM Values:\n Beta: {portfolio_beta:.4f}\n Standard Error: {portfolio_se:.4f}")
 
-"""
-3. Write a paragraph summarizing your observations.  How does your results in (2) compare to (1)?
+print("""
+  3. Write a paragraph summarizing your observations.  How does your results in (2) compare to (1)?
 
 MSFT shows a higher mean return (0.0917%) and greater volatility (1.6192%) compared to PG, 
 which has a mean return of 0.0451% and lower volatility (1.0803%). The CAPM analysis reflects 
@@ -132,6 +137,5 @@ deviation of 1.15%, demonstrating reduced volatility compared to MSFT alone. The
 CAPM beta of 0.8394 provides balanced market exposure. The portfolio achieved a final value 
 of 947.81% of the principal, showing that diversification offers a more stable and attractive 
 risk-adjusted return compared to individual stocks.
-
-
 """
+)
