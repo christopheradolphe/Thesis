@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.ar_model import AutoReg
 from sklearn.metrics import r2_score
+from statsmodels.graphics.tsaplots import plot_pacf,plot_acf
 
-# 1. 
-# a) Estimate an AR(1) time series model of the VIX using data from 1990-2015.
+# 1. Estimate an AR(1) time series model of the VIX using data from 1990-2015.
 
 #Load excel VIX Data into pandas dataframe
-vix_data = pd.read_csv('vixdata.csv', index_col='dt')
+vix_data = pd.read_csv('vixdata.csv', index_col='dt', parse_dates=True)
 
 #Remove empty vix data
 vix_data.dropna(subset= ['vix'], inplace=True)
@@ -39,35 +39,33 @@ else:
   print("P-value is less than 0.05 so we can reject null hypothesis and data is stationary")
 
 # Create indicies for in and out of sample dates
-in_sample_start_date = vix_data.index.get_loc('1990-01-02')
-in_sample_end_date = vix_data.index.get_loc('2015-12-31')
-out_sample_start_date = vix_data.index.get_loc('2016-01-04')
-out_sample_end_date = vix_data.index.get_loc('2024-02-16')
+in_sample_start_date = '1990-01-02'
+in_sample_end_date = '2015-12-31'
+out_sample_start_date = '2016-01-04'
+out_sample_end_date = '2024-02-16'
+in_sample_data = vix_data[in_sample_start_date:in_sample_end_date]
+out_sample_data = vix_data[out_sample_start_date:out_sample_end_date]
 
 # Fit the AR model (with lag of 1)
-model_params = AutoReg(vix_data['vix'].iloc[in_sample_start_date:in_sample_end_date+1], lags=1)
+model_params = AutoReg(in_sample_data, lags=1)
 model_fit = model_params.fit()
 print(model_fit.summary())
 
 
-
 #2. a) For each day in the data, use your model to 
 # calculate a 21-trading-day-ahead forecast of the VIX.  
-forecast_days = 21
-forecasts = []
+forecast_21_day_in_sample = []
 
+for i in range(len(in_sample_data) - 21):
+  forecast = model_fit.predict(start=i, end = len(in_sample_data), dynamic=True)[i+21]
+  forecast_21_day_in_sample.append(forecast)
 
-# for i in range(1, len(vix_data)):
-#   forecast = model_fit.predict(start=i, end = max(i+forecast_days - 1, len(vix_data)))[:21]
-#   forecasts.append(forecast.values)
-
-# forecast_df = pd.DataFrame(forecasts, index=vix_data.index[1:], columns=vix_data.index[1:1+forecast_days])
-
+forecast_21_day_in_sample = pd.Series(forecast_21_day_in_sample, index=in_sample_data.index[21:])
 # print(forecast_df.head())
 
 #2b) R-squared for in sample predictions
-forecast = model_fit.predict(start=in_sample_start_date, end=out_sample_end_date)
-forecast.plot(label='Forecasted VIX Data')
+forecast = model_fit.predict(start=0, end=len(vix_data))
+forecast.plot(label='Forecasted In Sample VIX Data')
 vix_data['vix'].plot(label='Actual VIX Data')
 plt.xlabel('Date')
 plt.ylabel('VIX')
@@ -75,7 +73,11 @@ plt.title("Actual vs Forecasted VIX Data")
 plt.legend()
 plt.show()
 
-in_sample_r2 = r2_score(vix_data['vix'].iloc[1:in_sample_end_date+1], forecast[1:in_sample_end_date+1])
-out_sample_r2 = r2_score(vix_data['vix'].iloc[out_sample_start_date:], forecast[out_sample_start_date:])
-print("In Sample R-Squared: ", in_sample_r2)
-print("\nOut of Sample R-Squared: ", out_sample_r2)
+# in_sample_r2 = r2_score(vix_data['vix'].iloc[1:in_sample_end_date+1], forecast_in_sample.iloc[1:])
+# out_sample_r2 = r2_score(vix_data['vix'].iloc[out_sample_start_date:], forecast_out_sample)
+# print("In Sample R-Squared: ", in_sample_r2)
+# print("\nOut of Sample R-Squared: ", out_sample_r2)
+
+
+#3. Suggestions to improve model
+pacf = plot_pacf(vix_data['vix'], lags=10)
