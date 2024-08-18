@@ -4,20 +4,21 @@ from statsmodels.tsa.stattools import adfuller
 from statsmodels.tsa.ar_model import AutoReg
 from sklearn.metrics import r2_score
 
-#1. Estimate an AR(1) time series model of the VIX using data from 1990-2015.
+# 1. 
+# a) Estimate an AR(1) time series model of the VIX using data from 1990-2015.
 
-#Loading excel VIX Data
+#Load excel VIX Data into pandas dataframe
 vix_data = pd.read_csv('vixdata.csv', index_col='dt')
 
 #Remove empty vix data
 vix_data.dropna(subset= ['vix'], inplace=True)
 
 #Preview Data
-print(vix_data.head())
+# print(vix_data.head())
 
 #Plot the vix data
-vix_data.plot(title = "VIX data")
-plt.show()
+# vix_data.plot(title = "VIX data")
+# plt.show()
 
 #Stationarity Check
 adf_test = adfuller(vix_data['vix'])
@@ -37,23 +38,16 @@ if adf_test[1] > 0.05 or any(adf_test[0] > value for value in list(adf_test[4].v
 else:
   print("P-value is less than 0.05 so we can reject null hypothesis and data is stationary")
 
-
-
-#Fit the AR model
+# Create indicies for in and out of sample dates
 in_sample_start_date = vix_data.index.get_loc('1990-01-02')
 in_sample_end_date = vix_data.index.get_loc('2015-12-31')
 out_sample_start_date = vix_data.index.get_loc('2016-01-04')
 out_sample_end_date = vix_data.index.get_loc('2024-02-16')
 
+# Fit the AR model (with lag of 1)
 model_params = AutoReg(vix_data['vix'].iloc[in_sample_start_date:in_sample_end_date+1], lags=1)
 model_fit = model_params.fit()
 print(model_fit.summary())
-
-
-# #Check residuals
-# residuals = model_fit.resid
-# plt.plot(residuals)
-# plt.show()
 
 
 
