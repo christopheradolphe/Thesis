@@ -53,11 +53,11 @@ pg_model = sm.OLS(pg_returns, market_returns_with_const).fit()
 #Extract CAPM BETAS and Standard Errors
 msft_beta = msft_model.params['Adj Close']
 msft_se = msft_model.bse['Adj Close']
-print(f"Microsoft CAPM Values:\n Beta: {msft_beta}\n Standard Error: {msft_se}")
+print(f"Microsoft CAPM Values:\n Beta: {msft_beta:.4f}\n Standard Error: {msft_se:.4f}")
 
 pg_beta = pg_model.params['Adj Close']
 pg_se = pg_model.bse['Adj Close']
-print(f"PG CAPM Values:\n Beta: {pg_beta}\n Standard Error: {pg_se}")
+print(f"PG CAPM Values:\n Beta: {pg_beta:.4f}\n Standard Error: {pg_se:.4f}")
 
 #Part 2
 # Portfolio starts at value of 1 and rebalances to 50% of total every year
@@ -87,7 +87,7 @@ for year in combined_returns.index.year.unique():
 
 #Final Portfolio Value
 final_value = portfolio_value_df.iloc[-1]['Portfolio Value']
-print(f'Final Portfolio Value: {final_value * 100}% of Principal Investment')
+print(f'Final Portfolio Value: {final_value * 100:.2f}% of Principal Investment')
 
 #Calculate Daily Portfolio Returns
 portfolio_returns = portfolio_value_df['Portfolio Value'].pct_change().dropna()
@@ -96,15 +96,15 @@ print(portfolio_returns.head())
 
 #Mean Return
 mean_return = portfolio_returns.mean()
-print(f'Mean Portfolio Return: {mean_return}')
+print(f'Mean Portfolio Return: {mean_return:.6f}')
 
 #Standard Deviation
 std_return = portfolio_returns.std()
-print(f'Standard Dev Portfolio Return: {std_return}')
+print(f'Standard Dev Portfolio Return: {std_return:.4f}')
 
 #Find CAPM model values
 market_returns_with_const.index = pd.to_datetime(market_returns_with_const.index)
 rebalanced_portfolio_model = sm.OLS(portfolio_returns, market_returns_with_const.loc[portfolio_returns.index]).fit()
 portfolio_beta = rebalanced_portfolio_model.params['Adj Close']
 portfolio_se = rebalanced_portfolio_model.bse['Adj Close']
-print(f"Rebalanced Portfolio CAPM Values:\n Beta: {msft_beta}\n Standard Error: {msft_se}")
+print(f"Rebalanced Portfolio CAPM Values:\n Beta: {portfolio_beta:.4f}\n Standard Error: {portfolio_se:.4f}")
