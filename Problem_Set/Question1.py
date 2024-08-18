@@ -16,14 +16,14 @@ vix_data.dropna(inplace=True)
 
 #Stationarity Check
 adf_test = adfuller(vix_data['vix'])
-print("ADF Test Results")
+print("ADF Test Results:")
 print("p-value: ", adf_test[1])
 print(list(adf_test[4].values())[0], type(list(adf_test[4].values())[0]))
 if adf_test[1] > 0.05 or any(adf_test[0] > value for value in list(adf_test[4].values())):
   print("Data does not fulfill stationarity")
   exit(-1)
 else:
-  print("P-value is less than 0.05 so we can reject null hypothesis and data is stationary")
+  print("P-value is less than 0.05 so we can reject null hypothesis and data is stationary\n")
 
 # Create indicies for in and out of sample dates
 in_sample_start_date = '1990-01-02'
@@ -45,7 +45,7 @@ beta = model_fit.params['vix.L1']
 
 
 # 2a) For each day in the data, use your model to calculate a 21-trading-day-ahead forecast of the VIX.  
-print("For each day in the data, use your model to calculate a 21-trading-day-ahead forecast of the VIX")
+print("\n2a) For each day in the data, use your model to calculate a 21-trading-day-ahead forecast of the VIX")
 
 # Using .predict() 
 # forecast_21_day_in_sample = []
@@ -83,7 +83,7 @@ forecast_21_day_out_sample = pd.Series(forecast_21_day_out_sample, index=out_sam
 
 # 2b) What is the R-squared of the realized VIX on your forecast value in sample (over 1990-2015)?  
 #     What about out-of-sample (2016-most recent data)?
-print("What is the R-squared of the realized VIX on your forecast value in sample (over 1990-2015)? What about out-of-sample (2016-most recent data)?")
+print("\n2b) What is the R-squared of the realized VIX on your forecast value in sample (over 1990-2015)? What about out-of-sample (2016-most recent data)?")
 
 in_sample_r2 = r2_score(in_sample_data.iloc[22:], forecast_21_day_in_sample)
 print("In Sample R-Squared: ", in_sample_r2)
@@ -93,7 +93,7 @@ print("Out Sample R-Squared: ", out_sample_r2)
 
 
 #3) Write a paragraph summarizing your observations.  How does your results in (2) compare to (1)?
-print("Write a paragraph summarizing your observations.  How does your results in (2) compare to (1)?")
+print("\n3) Write a paragraph summarizing your observations.  How does your results in (2) compare to (1)?")
 
 # Plot forecasted compared to each other for observations
 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14, 6))
