@@ -26,8 +26,6 @@ combined_returns = pd.DataFrame({
     'GSPC': gspc_returns
 })
 
-print(combined_returns.head())
-
 #Calculate Mean of Returns
 mean_returns = combined_returns.mean()
 
@@ -40,7 +38,7 @@ summary_table = pd.DataFrame({
   "Standard Deviation" : standard_deviation_returns
 })
 
-#Print data
+#Print standard deviation and mean data
 print(summary_table)
 
 #Estimate Full Sample CAPM betas (with standard errors)
@@ -89,7 +87,7 @@ for year in combined_returns.index.year.unique():
 
 #Final Portfolio Value
 final_value = portfolio_value_df.iloc[-1]['Portfolio Value']
-print(f'Final Portfolio Value: {final_value}')
+print(f'Final Portfolio Value: {final_value * 100}% of Principal Investment')
 
 #Calculate Daily Portfolio Returns
 portfolio_returns = portfolio_value_df['Portfolio Value'].pct_change().dropna()
