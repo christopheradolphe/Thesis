@@ -11,7 +11,7 @@ from statsmodels.graphics.tsaplots import plot_pacf,plot_acf
 vix_data = pd.read_csv('vixdata.csv', index_col='dt', parse_dates=True)
 
 #Remove empty vix data
-vix_data.dropna(subset= ['vix'], inplace=True)
+vix_data.dropna(inplace=True)
 
 #Preview Data
 # print(vix_data.head())
@@ -47,21 +47,38 @@ in_sample_data = vix_data[in_sample_start_date:in_sample_end_date]
 out_sample_data = vix_data[out_sample_start_date:out_sample_end_date]
 
 # Fit the AR model (with lag of 1)
-model_params = AutoReg(in_sample_data, lags=1)
+model_params = AutoReg(in_sample_data['vix'].reset_index(drop=True), lags=1)
 model_fit = model_params.fit()
 print(model_fit.summary())
+
+# Extract the model parameters
+alpha = model_fit.params['const']
+beta = model_fit.params['vix.L1']
 
 
 #2. a) For each day in the data, use your model to 
 # calculate a 21-trading-day-ahead forecast of the VIX.  
 forecast_21_day_in_sample = []
 
-for i in range(len(in_sample_data) - 21):
-  forecast = model_fit.predict(start=i, end = len(in_sample_data), dynamic=True)[i+21]
+for i in range(1, len(in_sample_data) - 21):
+  forecast = model_fit.predict(start=i,end=i+21, dynamic=True)[i+21]
   forecast_21_day_in_sample.append(forecast)
 
-forecast_21_day_in_sample = pd.Series(forecast_21_day_in_sample, index=in_sample_data.index[21:])
-# print(forecast_df.head())
+forecast_21_day_in_sample = pd.Series(forecast_21_day_in_sample, index=in_sample_data.index[22:])
+print(forecast_21_day_in_sample.head())
+in_sample_r2 = r2_score(in_sample_data.iloc[22:], forecast_21_day_in_sample)
+print("In Sample R-Squared: ", in_sample_r2)
+
+forecast_21_day_out_sample = []
+
+for i in range(len(in_sample_data), len(vix_data)):
+  forecast = model_fit.predict(start=i,end=i+21, dynamic=True)[i+21]
+  forecast_21_day_out_sample.append(forecast)
+
+forecast_21_day_out_sample = pd.Series(forecast_21_day_out_sample, index=out_sample_data.index[22:])
+print(forecast_21_day_in_sample.head())
+in_sample_r2 = r2_score(out_sample_data.iloc[22:], forecast_21_day_out_sample)
+print("In Sample R-Squared: ", in_sample_r2)
 
 #2b) R-squared for in sample predictions
 forecast = model_fit.predict(start=0, end=len(vix_data))
