@@ -57,12 +57,27 @@ beta = model_fit.params['vix.L1']
 
 
 #2. a) For each day in the data, use your model to 
-# calculate a 21-trading-day-ahead forecast of the VIX.  
+# calculate a 21-trading-day-ahead forecast of the VIX. 
+# Using .predict() 
+# forecast_21_day_in_sample = []
+
+# for i in range(1, len(in_sample_data) - 21):
+#   forecast = model_fit.predict(start=i,end=i+21, dynamic=True)[i+21]
+#   forecast_21_day_in_sample.append(forecast)
+
+# forecast_21_day_in_sample = pd.Series(forecast_21_day_in_sample, index=in_sample_data.index[22:])
+# print(forecast_21_day_in_sample.head())
+# in_sample_r2 = r2_score(in_sample_data.iloc[22:], forecast_21_day_in_sample)
+# print("In Sample R-Squared: ", in_sample_r2)
+
+#Using alpha and beta values
 forecast_21_day_in_sample = []
 
-for i in range(1, len(in_sample_data) - 21):
-  forecast = model_fit.predict(start=i,end=i+21, dynamic=True)[i+21]
-  forecast_21_day_in_sample.append(forecast)
+for i in range(len(in_sample_data) - 22):
+  value = vix_data['vix'].iloc[i]
+  for _ in range(21):
+    value = alpha + beta * value
+  forecast_21_day_in_sample.append(value)
 
 forecast_21_day_in_sample = pd.Series(forecast_21_day_in_sample, index=in_sample_data.index[22:])
 print(forecast_21_day_in_sample.head())
@@ -71,30 +86,38 @@ print("In Sample R-Squared: ", in_sample_r2)
 
 forecast_21_day_out_sample = []
 
-for i in range(len(in_sample_data), len(vix_data)):
-  forecast = model_fit.predict(start=i,end=i+21, dynamic=True)[i+21]
-  forecast_21_day_out_sample.append(forecast)
+for i in range(len(in_sample_data), len(vix_data) - 22):
+  value = vix_data['vix'].iloc[i]
+  for _ in range(21):
+    value = alpha + beta * value
+  forecast_21_day_out_sample.append(value)
 
 forecast_21_day_out_sample = pd.Series(forecast_21_day_out_sample, index=out_sample_data.index[22:])
-print(forecast_21_day_in_sample.head())
-in_sample_r2 = r2_score(out_sample_data.iloc[22:], forecast_21_day_out_sample)
-print("In Sample R-Squared: ", in_sample_r2)
+print(forecast_21_day_out_sample.head())
+out_sample_r2 = r2_score(out_sample_data.iloc[22:], forecast_21_day_out_sample)
+print("Out Sample R-Squared: ", out_sample_r2)
 
-#2b) R-squared for in sample predictions
-forecast = model_fit.predict(start=0, end=len(vix_data))
-forecast.plot(label='Forecasted In Sample VIX Data')
-vix_data['vix'].plot(label='Actual VIX Data')
-plt.xlabel('Date')
-plt.ylabel('VIX')
-plt.title("Actual vs Forecasted VIX Data")
-plt.legend()
+#2b) Plot forecasted compared to each other
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14, 6))
+
+# Plot the in-sample data (actual and forecasted) on the first plot
+axes[0].plot(in_sample_data.index[22:], in_sample_data.iloc[22:], label='Actual VIX (In-Sample)', color='blue')
+axes[0].plot(forecast_21_day_in_sample.index, forecast_21_day_in_sample, label='Forecasted VIX (In-Sample)', color='red', linestyle='--')
+axes[0].set_title('In-Sample VIX: Actual vs Forecast')
+axes[0].set_xlabel('Date')
+axes[0].set_ylabel('VIX')
+axes[0].legend()
+
+# Plot the out-of-sample data (actual and forecasted) on the second plot
+axes[1].plot(out_sample_data.index[22:], out_sample_data.iloc[22:], label='Actual VIX (Out-of-Sample)', color='blue')
+axes[1].plot(forecast_21_day_out_sample.index, forecast_21_day_out_sample, label='Forecasted VIX (Out-of-Sample)', color='red', linestyle='--')
+axes[1].set_title('Out-of-Sample VIX: Actual vs Forecast')
+axes[1].set_xlabel('Date')
+axes[1].set_ylabel('VIX')
+axes[1].legend()
+
+# Adjust layout to ensure titles and labels are not overlapping
+plt.tight_layout()
+
+# Show the plots
 plt.show()
-
-# in_sample_r2 = r2_score(vix_data['vix'].iloc[1:in_sample_end_date+1], forecast_in_sample.iloc[1:])
-# out_sample_r2 = r2_score(vix_data['vix'].iloc[out_sample_start_date:], forecast_out_sample)
-# print("In Sample R-Squared: ", in_sample_r2)
-# print("\nOut of Sample R-Squared: ", out_sample_r2)
-
-
-#3. Suggestions to improve model
-pacf = plot_pacf(vix_data['vix'], lags=10)
