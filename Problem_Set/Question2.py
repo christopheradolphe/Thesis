@@ -112,7 +112,8 @@ std_return = portfolio_returns.std()
 print(f'Standard Dev Portfolio Return: {std_return}')
 
 #Find CAPM model values
-rebalanced_portfolio_model = sm.OLS(portfolio_returns, market_returns_with_const).fit()
-portfolio_beta = rebalanced_portfolio_model.params['Portfolio Value']
-portfolio_se = rebalanced_portfolio_model.bse['Portfolio Value']
+market_returns_with_const.index = pd.to_datetime(market_returns_with_const.index)
+rebalanced_portfolio_model = sm.OLS(portfolio_returns, market_returns_with_const.loc[portfolio_returns.index]).fit()
+portfolio_beta = rebalanced_portfolio_model.params['Adj Close']
+portfolio_se = rebalanced_portfolio_model.bse['Adj Close']
 print(f"Rebalanced Portfolio CAPM Values:\n Beta: {msft_beta}\n Standard Error: {msft_se}")
