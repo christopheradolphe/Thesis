@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
 import yfinance as yf
 from pandas_datareader import data as web
-from statsmodels.regression.linear_model import OLS
 import pickle
+import statsmodels.api as sm
 
 def load_vix_data(start_date='2004-01-01', end_date='2023-12-31'):
     """
@@ -51,6 +51,30 @@ def prepare_data(start_date='2004-01-01', end_date='2023-12-31'):
     data = data.dropna()
     return data
 
+def HAR_data_preparation(data):
+    """
+    Prepare the data for the HAR model by computing lagged variables.
+    
+    Parameters:
+    - data: DataFrame with columns 'VIX_Close', 'SP_Return', 'SP_Volume', 'Term_Spread'
+    
+    Returns:
+    - data: Prepared DataFrame
+    """
+    # Compute lagged VIX variables
+    data['VIX_t-1'] = data['Close'].shift(1)
+    data['VIX_t-5'] = data['Close'].rolling(window=5).mean().shift(1)
+    data['VIX_t-22'] = data['Close'].rolling(window=22).mean().shift(1)
+    
+    # Compute lagged exogenous variables
+    data['S&P Returns_t-1'] = data['S&P Returns'].shift(1)
+    data['Volume_t-1'] = data['Volume'].shift(1)
+    data['TermSpread_t-1'] = data['TermSpread'].shift(1)
+    
+    # Drop rows with NaN values
+    data = data.dropna()
+    return data
+
 def train_ARMA_model(train_data):
     model = ARIMA(train_data, order=(2,0,2))
     arma_model = model.fit()
@@ -64,86 +88,74 @@ def load_ARMA_model():
         loaded_model = pickle.load(f)
     return loaded_model
 
-def rolling_forecast_errors(vix_data, train_end_date, min_horizon=7, max_horizon=30):
+def generate_forecasts(vix_data, start_date, end_date, forecast_horizons=range(7, 31)):
     """
-    Perform rolling forecast and compute errors for each forecast horizon.
+    Generate forecasts for each date in the out-of-sample period.
 
     Parameters:
-    - vix_data: pandas Series, VIX data.
-    - train_end_date: str or datetime, the end date of initial training data.
-    - min_horizon: int, minimum forecast horizon (e.g., 7 days).
-    - max_horizon: int, maximum forecast horizon (e.g., 30 days).
+    - arma_model: Trained ARMA model.
+    - vix_data: Series, full VIX data.
+    - start_date: str, start date of the out-of-sample period.
+    - end_date: str, end date of the out-of-sample period.
+    - forecast_horizons: iterable, forecast horizons to consider.
 
     Returns:
-    - mse_df: DataFrame, with MSE for each horizon from min_horizon to max_horizon.
+    - forecasts_df: DataFrame containing forecasts and actual values.
     """
-    train_end_date = pd.to_datetime(train_end_date)
-    
-    # Get the list of dates in the out-of-sample period
-    out_of_sample_dates = vix_data.index[vix_data.index > train_end_date]
-    
-    horizons = range(min_horizon, max_horizon + 1)
-    
-    # Dictionary to store errors for each horizon
-    errors = {h: [] for h in horizons}
-    
-    # For each date t in out-of-sample period
-    for t in out_of_sample_dates:
-        # Define the training data up to date t
-        train_data = vix_data[:t]
-        
-        # Fit the ARMA(2,2) model
+    forecasts = []
+    test_dates = vix_data[start_date:end_date].index
+
+    for t in test_dates:
+        # Get data up to date t
+        available_data = vix_data[:t]
+
+        # Apply the model parameters without refitting
         try:
-            model = ARIMA(train_data, order=(2, 0, 2))
-            arma_result = model.fit()
+            model = ARIMA(available_data, order=(2,0,2))
+            arma_model = model.fit()
         except Exception as e:
-            # If the model fails to fit, skip this date
-            print(f"Model failed to fit at date {t}: {e}")
+            print(f"Error at date {t}: {e}")
             continue
-        
-        # Forecast up to max_horizon steps ahead
-        forecast = arma_result.get_forecast(steps=max_horizon)
-        forecast_values = forecast.predicted_mean
-        
-        # Forecast dates
-        forecast_dates = pd.date_range(start=t, periods=max_horizon + 1, freq='B')[1:]
-        
-        # For each horizon h
-        for h in horizons:
-            if h - 1 >= len(forecast_values):
-                continue  # Not enough forecasted values
-            forecast_value = forecast_values.iloc[h - 1]
-            
-            # Actual value at t + h
-            if h - 1 >= len(forecast_dates):
-                continue  # Not enough forecast dates
-            forecast_date = forecast_dates[h - 1]
-            if forecast_date in vix_data.index:
-                actual_value = vix_data.loc[forecast_date]
-                # Compute squared error
-                error = (forecast_value - actual_value) ** 2
-                errors[h].append(error)
+
+        # Generate forecasts from t+1 to t+max_horizon
+        steps_ahead = max(forecast_horizons)
+        forecast = arma_model.get_forecast(steps=steps_ahead)
+
+        # Get forecasted mean values
+        forecast_mean = forecast.predicted_mean
+
+        # Get forecast dates
+        forecast_index = pd.date_range(start=t, periods=steps_ahead + 1, freq='B')[1:]
+
+        daily_forecasts = {'Date' : t}
+        # Collect forecasts for specified horizons
+        for h in forecast_horizons:
+            if h - 1 < len(forecast_mean):
+                forecast_value = forecast_mean.iloc[h - 1]
+                # Get actual value if available
+                daily_forecasts[f'{h}'] = forecast_value
             else:
-                # If we don't have actual data for forecast_date, skip
-                continue
-                
-    # Compute MSE for each horizon
-    mse = {h: np.mean(errors[h]) if len(errors[h]) > 0 else np.nan for h in horizons}
-    
-    # Convert to DataFrame
-    mse_df = pd.DataFrame.from_dict(mse, orient='index', columns=['MSE'])
-    
-    return mse_df
+                break
+
+        forecasts.append(daily_forecasts)
+    forecasts_df = pd.DataFrame(forecasts)
+    forecasts_df.to_csv('ARMA Forecasts 2014', index=True)
+    return forecasts_df
 
 # Run the main function
 if __name__ == '__main__':
     # Getting data
-    data = prepare_data(start_date='2004-01-01', end_date='2023-12-31')
-    data.to_csv('December 31, 2023', index = True)
+    # data = prepare_data(start_date='2004-01-01', end_date='2023-12-31')
+    # data.to_csv('December 31, 2023', index = True)
 
     # Refitting the model
     vix_data = pd.read_csv('December 31, 2023', index_col=0)
-    model = train_ARMA_model(vix_data["Close"])
+    data = HAR_data_preparation(vix_data)
+    data.to_csv('HAR_Data_2004-2023', index=True)
+    # model = train_ARMA_model(vix_data[vix_data.index < '2013-12-31'].Close)
 
     # Load ARMA model
     model = load_ARMA_model()
+
+    # Generate Forecasts
+    generate_forecasts(vix_data.Close, '2014-01-01', '2014-06-01')
