@@ -3,7 +3,9 @@ import statsmodels.api as sm
 import yfinance as yf
 import pickle
 
-def train(train_data):
+def train(data, train_start_date='1993-01-19', train_end_date='2004-12-31'):
+    # Train data only in range specified by arguments
+    train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
     y = train_data['Close']
     X = train_data[['VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']]
     X = sm.add_constant(X)
