@@ -1,39 +1,32 @@
 import pandas as pd
-from statsmodels.tsa.arima.model import ARIMA
+import statsmodels.api as sm
 import yfinance as yf
 import pickle
 
 def train(train_data):
-    model = ARIMA(train_data, order=(2,0,2))
-    arma_model = model.fit()
-    with open('arma_model.pkl', 'wb') as f:
-        pickle.dump(arma_model, f)
-    return arma_model
+    y = train_data['Close']
+    X = train_data[['VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']]
+    X = sm.add_constant(X)
+    model = sm.OLS(y, X)
+    har_model = model.fit()
+    with open('har_model.pkl', 'wb') as f:
+      pickle.dump(har_model, f)
+    return har_model
 
 def load():
-    with open('arma_model.pkl', 'rb') as f:
+    with open('har_model.pkl', 'rb') as f:
         loaded_model = pickle.load(f)
     return loaded_model
 
-def generate_forecasts(vix_data, start_date, end_date, forecast_horizons=range(7, 34)):
+def forecast_har_model(training_data, start_date, end_date, forecast_horizons=range(7, 31)):
     forecasts = []
-    test_dates = vix_data[start_date:end_date].index
-
+    test_dates = training_data[start_date:end_date].index
     for t in test_dates:
-        # Get data up to date t
-        available_data = vix_data[:t]
-
-        # Apply the model parameters without refitting
-        try:
-            model = ARIMA(available_data, order=(2,0,2))
-            arma_model = model.fit()
-        except Exception as e:
-            print(f"Error at date {t}: {e}")
-            continue
-
-        # Generate forecasts from t+1 to t+max_horizon
+        available_data = training_data[:t]
+        model = train(available_data)
+                
         steps_ahead = max(forecast_horizons)
-        forecast = arma_model.get_forecast(steps=steps_ahead)
+        forecast = model.predict(steps=steps_ahead)
 
         # Get forecasted mean values
         forecast_mean = forecast.predicted_mean
@@ -52,6 +45,8 @@ def generate_forecasts(vix_data, start_date, end_date, forecast_horizons=range(7
                 break
 
         forecasts.append(daily_forecasts)
+
+    
     forecasts_df = pd.DataFrame(forecasts)
     forecasts_df.to_csv('ARMA Forecasts', index=True)
     return forecasts_df
