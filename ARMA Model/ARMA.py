@@ -14,7 +14,6 @@ def train_ARMA_model(train_data):
     arma_model = model.fit()
     with open('arma_model.pkl', 'wb') as f:
         pickle.dump(arma_model, f)
-
     return arma_model
 
 def load_ARMA_model():
@@ -63,7 +62,7 @@ def generate_forecasts(vix_data, start_date, end_date, forecast_horizons=range(7
     forecasts_df.to_csv('ARMA Forecasts', index=True)
     return forecasts_df
 
-def fit_har_model(train_data):
+def train_HAR_model(train_data):
     y = train_data['Close']
     X = train_data[['VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']]
     X = sm.add_constant(X)
@@ -76,7 +75,7 @@ def forecast_har_model(training_data, start_date, end_date, forecast_horizons=ra
     test_dates = training_data[start_date:end_date].index
     for t in test_dates:
         available_data = training_data[:t]
-        model = fit_har_model(available_data)
+        model = train_HAR_model(available_data)
                 
         steps_ahead = max(forecast_horizons)
         forecast = model.predict(steps=steps_ahead)
@@ -120,9 +119,12 @@ if __name__ == '__main__':
     if args.data:
         data_retriever.get_latest_data()
         print(f'Data stored in file')
-    
     if args.artrain:
         train_ARMA_model(pd.readcsv('Latest_VIX_Data'))
+    if args.hartrain:
+        train_HAR_model()
+    
+
     
 
 
