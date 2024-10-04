@@ -2,19 +2,19 @@ import pandas as pd
 import yfinance as yf
 from pandas_datareader import data as web
 
-def load_vix_data(start_date='2004-01-01', end_date='2023-12-31'):
-    vix_data = yf.download('^VIX', start=start_date, end=end_date)
+def load_vix_data(start_date='1993-01-19', end_date='2023-12-31'):
+    vix_data = yf.download('^VIX', start_date=start_date, end_date=end_date)
     vix_data = vix_data['Close'].dropna()  # Keep only the 'Close' column and drop NaN values
     return vix_data
 
-def load_sp500_data(start_date='2004-01-01', end_date='2023-12-31'):
+def load_sp500_data(start_date='1993-01-19', end_date='2023-12-31'):
     adjusted_start_date = (pd.to_datetime(start_date) - pd.tseries.offsets.BDay(1))
     sp500_data = yf.download('^GSPC', start=adjusted_start_date, end=end_date)
     sp500_data = sp500_data[['Close', 'Volume']].dropna()
     sp500_data['S&P Returns'] = sp500_data['Close'].pct_change()
     return sp500_data.drop(columns = ['Close']).drop(sp500_data.index[0])
 
-def load_term_spread(start_date='2004-01-01', end_date='2023-12-31'):
+def load_term_spread(start_date='1993-01-19', end_date='2023-12-31'):
     dgs10 = web.DataReader('DGS10', 'fred', start_date, end_date)
     dgs2 = web.DataReader('DGS2', 'fred', start_date, end_date)
     term_spread = dgs10['DGS10'] - dgs2['DGS2']
@@ -37,7 +37,7 @@ def HAR_data_preparation(data):
     data = data.dropna()
     return data
 
-def get_latest_data(start_date='2004-01-01', end_date='2023-12-31'):
+def get_latest_data(start_date='1993-01-19', end_date='2023-12-31'):
     # Load data
     vix_data = load_vix_data(start_date, end_date)
     sp500_data = load_sp500_data(start_date, end_date)
