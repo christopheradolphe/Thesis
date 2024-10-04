@@ -26,7 +26,7 @@ if __name__ == '__main__':
         try:
             # Check if file exists
             if not os.path.exists('Latest_VIX_Data.csv'):
-                raise FileNotFoundError("Latest_VIX_Data.csv not found. Please ensure the file exists.")
+                get_latest_data()
             
             # Load the data
             data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         try:
             # Check if file exists
             if not os.path.exists('Latest_VIX_Data.csv'):
-                raise FileNotFoundError("Latest_VIX_Data.csv not found. Please ensure the file exists.")
+                get_latest_data()
             
             # Load the data
             data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)
@@ -66,5 +66,16 @@ if __name__ == '__main__':
             ARMA_model.train(data)
             print("HAR model trained successfully.")
 
+        except (FileNotFoundError, ValueError) as e:
+            print(f"Error during ARMA model training: {e}")
+    
+    if args.forecast:
+        try:
+            AR_model = ARMA_model.load()
+            if not os.path.exists('Latest_VIX_Data.csv'):
+                get_latest_data()    
+
+            ARMA_model.generate_forecasts(pd.read_csv('Latest_VIX_Data.csv', index_col=0)['Close'])
+            
         except (FileNotFoundError, ValueError) as e:
             print(f"Error during ARMA model training: {e}")
