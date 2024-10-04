@@ -2,6 +2,7 @@ import pandas as pd
 import statsmodels.api as sm
 import yfinance as yf
 import pickle
+from statsmodels.tsa.arima.model import ARIMA
 
 def train(data, train_start_date='1993-01-19', train_end_date='2004-12-31'):
     # Train data only in range specified by arguments
@@ -22,7 +23,7 @@ def load():
 
 def generate_har_forecasts(har_model, data, start_date, end_date, forecast_horizons=range(1, 35)):
     """
-    Generate 34-day forecasts using the HAR model.
+    Generate 34-day forecasts using the HAR model with forecasted exogenous variables.
 
     Parameters:
     - har_model: Trained HAR model (statsmodels OLSResults object).
@@ -62,7 +63,35 @@ def generate_har_forecasts(har_model, data, start_date, end_date, forecast_horiz
         forecasted_VIX = []
         VIX_history = available_data['Close'].tolist()
 
-        # Prepare initial lagged VIX values
+        # Forecast exogenous variables
+        exog_forecasts = {}
+        exog_variables = ['S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']
+
+        for var in exog_variables:
+            # Get the series up to date t
+            exog_series = available_data[var]
+
+            # Check if there is enough data to fit the model
+            if len(exog_series) < 30:
+                # If not enough data, assume constant value
+                exog_forecasts[var] = [exog_series.iloc[-1]] * max(forecast_horizons)
+                continue
+
+            # Fit AR(1) model
+            try:
+                model = ARIMA(exog_series, order=(1, 0, 0))
+                model_fit = model.fit()
+
+                # Forecast for horizons 1 to max(forecast_horizons)
+                exog_forecast = model_fit.forecast(steps=max(forecast_horizons))
+
+                # Store forecasts
+                exog_forecasts[var] = exog_forecast.tolist()
+            except:
+                # If model fitting fails, assume constant value
+                exog_forecasts[var] = [exog_series.iloc[-1]] * max(forecast_horizons)
+
+        # Now, forecast VIX using the forecasted exogenous variables
         for h in range(1, max(forecast_horizons) + 1):
             # Get lagged VIX values
             idx_t_h_minus_1 = -1 + h - 1
@@ -87,10 +116,10 @@ def generate_har_forecasts(har_model, data, start_date, end_date, forecast_horiz
             else:
                 VIX_t22_h = forecasted_VIX[idx_t_h_minus_22]
 
-            # Handle exogenous variables (assuming they remain constant)
-            SP_return_t1 = available_data['S&P Returns_t-1'].iloc[-1]
-            Volume_t1 = available_data['Volume_t-1'].iloc[-1]
-            TermSpread_t1 = available_data['TermSpread_t-1'].iloc[-1]
+            # Get forecasted exogenous variables at horizon h
+            SP_return_t1 = exog_forecasts['S&P Returns_t-1'][h - 1]
+            Volume_t1 = exog_forecasts['Volume_t-1'][h - 1]
+            TermSpread_t1 = exog_forecasts['TermSpread_t-1'][h - 1]
 
             # Compute forecast using the HAR model equation
             y_pred = (const +
@@ -118,4 +147,9 @@ def generate_har_forecasts(har_model, data, start_date, end_date, forecast_horiz
     column_order = [str(h) for h in forecast_horizons]
     forecasts_df = forecasts_df[column_order]
 
+    forecasts_df.to_csv('HAR_Forecasts.csv', index=True)
+
     return forecasts_df
+
+data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+generate_har_forecasts(train(data), data, start_date='2004-01-01', end_date='2004-01-30')
