@@ -3,7 +3,9 @@ from statsmodels.tsa.arima.model import ARIMA
 import yfinance as yf
 import pickle
 
-def train(train_data):
+def train(data, train_start_date='1993-01-19', train_end_date='2004-12-31'):
+    # Modify train set to only include certain dates
+    train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
     model = ARIMA(train_data, order=(2,0,2))
     arma_model = model.fit()
     with open('arma_model.pkl', 'wb') as f:
