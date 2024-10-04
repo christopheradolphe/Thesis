@@ -64,7 +64,7 @@ if __name__ == '__main__':
             
             # Train and save ARMA(2,2) model to pickle file
             ARMA_model.train(data)
-            print("ARMA(2,2) model trained successfully.")
+            print("HAR model trained successfully.")
 
         except (FileNotFoundError, ValueError) as e:
             print(f"Error during ARMA model training: {e}")
