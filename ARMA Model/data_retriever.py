@@ -1,9 +1,10 @@
 import pandas as pd
 import yfinance as yf
 from pandas_datareader import data as web
+import time
 
 def load_vix_data(start_date='1993-01-19', end_date='2023-12-31'):
-    vix_data = yf.download('^VIX', start_date=start_date, end_date=end_date)
+    vix_data = yf.download('^VIX', start=start_date, end=end_date)
     vix_data = vix_data['Close'].dropna()  # Keep only the 'Close' column and drop NaN values
     return vix_data
 
@@ -38,6 +39,9 @@ def HAR_data_preparation(data):
     return data
 
 def get_latest_data(start_date='1993-01-19', end_date='2023-12-31'):
+    # Record start time
+    start_time = time.time()
+
     # Load data
     vix_data = load_vix_data(start_date, end_date)
     sp500_data = load_sp500_data(start_date, end_date)
@@ -49,7 +53,18 @@ def get_latest_data(start_date='1993-01-19', end_date='2023-12-31'):
     
     # Drop missing values
     data = data.dropna()
+
+    # Store data to CSV
     filename = f'Latest_VIX_Data'
     data.to_csv(filename, index = True)
     print(f'Latest VIX Data Retrieved and Stored in {filename}.csv')
+
+    # Record the end time and calculate the elapsed time
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    # Print the elapsed time and filename
+    print(f'Latest VIX Data Retrieved and Stored in {filename}.csv')
+    print(f'Time taken to retrieve data: {elapsed_time:.2f} seconds')
+
     return data

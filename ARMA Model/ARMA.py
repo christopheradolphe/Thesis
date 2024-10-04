@@ -117,11 +117,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.data:
+        # Retrieve latest data
         data_retriever.get_latest_data()
         print(f'Data stored in file')
     if args.artrain:
+        # Train and Save ARMA 2,2 model to pickle file
         train_ARMA_model(pd.readcsv('Latest_VIX_Data'))
     if args.hartrain:
+        # Train and Save HAR model to pickle file
         train_HAR_model()
     
 
