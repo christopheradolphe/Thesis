@@ -55,7 +55,7 @@ def get_latest_data(start_date='1993-01-19', end_date='2023-12-31'):
     data = data.dropna()
 
     # Store data to CSV
-    filename = f'Latest_VIX_Data'
+    filename = f'Latest_VIX_Data.csv'
     data.to_csv(filename, index = True)
     print(f'Latest VIX Data Retrieved and Stored in {filename}.csv')
 
