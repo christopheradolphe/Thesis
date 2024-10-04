@@ -75,7 +75,7 @@ if __name__ == '__main__':
             if not os.path.exists('Latest_VIX_Data.csv'):
                 get_latest_data()    
 
-            ARMA_model.generate_forecasts(pd.read_csv('Latest_VIX_Data.csv', index_col=0)['Close'])
-            
+            ARMA_model.generate_forecasts(pd.read_csv('Latest_VIX_Data.csv', index_col=0)['Close'], AR_model, start_date='2014-01-01', end_date='2014-01-30')
+
         except (FileNotFoundError, ValueError) as e:
             print(f"Error during ARMA model training: {e}")

@@ -9,7 +9,7 @@ from statsmodels.graphics.tsaplots import plot_pacf,plot_acf
 print("1. Estimate an AR(1) time series model of the VIX using data from 1990-2015.")
 
 #Load excel VIX Data into pandas dataframe
-vix_data = pd.read_csv('vixdata.csv', index_col='dt', parse_dates=True)
+vix_data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Problem_Set/vixdata.csv', index_col='dt', parse_dates=True)
 
 #Remove empty vix data
 vix_data.dropna(inplace=True)
