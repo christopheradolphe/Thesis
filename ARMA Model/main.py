@@ -25,17 +25,3 @@ if __name__ == '__main__':
     if args.hartrain:
         # Train and Save HAR model to pickle file
         HAR_model.train(pd.readcsv('Latest_VIX_Data'))
-    
-
-    
-
-
-
-    # Refitting the model
-    # model = train_ARMA_model(vix_data[vix_data.index < '2013-12-31'].Close)
-
-    # # Load ARMA model
-    # model = load_ARMA_model()
-
-    # # Generate Forecasts
-    # generate_forecasts(vix_data.Close, '2014-01-01', '2014-06-01')
