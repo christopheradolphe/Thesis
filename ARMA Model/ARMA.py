@@ -71,11 +71,11 @@ def fit_har_model(train_data):
     results = model.fit()
     return results
 
-def forecast_har_model(start_date, end_date, forecast_horizons=range(7, 31)):
+def forecast_har_model(training_data, start_date, end_date, forecast_horizons=range(7, 31)):
     forecasts = []
-    test_dates = vix_data[start_date:end_date].index
+    test_dates = training_data[start_date:end_date].index
     for t in test_dates:
-        available_data = vix_data[:t]
+        available_data = training_data[:t]
         model = fit_har_model(available_data)
                 
         steps_ahead = max(forecast_horizons)
@@ -110,7 +110,10 @@ def forecast_har_model(start_date, end_date, forecast_horizons=range(7, 31)):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
+    # List of arguments
     parser.add_argument('-D', '--data', action='store_true', help='Retrieve Latest VIX Data')
+    parser.add_argument('-A', '--artrain', action='store_true', help='Train Autoregressive model')
+    parser.add_argument('-H', '--hartrain', action='store_true', help='Train HAR model')
 
     args = parser.parse_args()
 
@@ -118,7 +121,11 @@ if __name__ == '__main__':
         data_retriever.get_latest_data()
         print(f'Data stored in file')
     
+    if args.artrain:
+        train_ARMA_model(pd.readcsv('Latest_VIX_Data'))
     
+
+
 
     # Refitting the model
     # model = train_ARMA_model(vix_data[vix_data.index < '2013-12-31'].Close)
@@ -128,6 +135,3 @@ if __name__ == '__main__':
 
     # # Generate Forecasts
     # generate_forecasts(vix_data.Close, '2014-01-01', '2014-06-01')
-
-    # Fit HAR model
-    har_model = fit_har_model(data)
