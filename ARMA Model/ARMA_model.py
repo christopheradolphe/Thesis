@@ -57,3 +57,7 @@ def generate_forecasts(vix_data, start_date, end_date, forecast_horizons=range(7
     forecasts_df = pd.DataFrame(forecasts)
     forecasts_df.to_csv('ARMA Forecasts', index=True)
     return forecasts_df
+
+data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+data = data['Close']
+train(data)

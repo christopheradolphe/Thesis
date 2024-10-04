@@ -28,7 +28,7 @@ if __name__ == '__main__':
                 raise FileNotFoundError("Latest_VIX_Data.csv not found. Please ensure the file exists.")
             
             # Load the data
-            data = pd.read_csv('Latest_VIX_Data.csv')
+            data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)
             
             # Check if the data is usable (non-empty)
             if data.empty or 'Close' not in data.columns:
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 raise FileNotFoundError("Latest_VIX_Data.csv not found. Please ensure the file exists.")
             
             # Load the data
-            data = pd.read_csv('Latest_VIX_Data.csv')
+            data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)
             
             # Check if the data is usable (non-empty)
             required_columns = ['Close', 'VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']
