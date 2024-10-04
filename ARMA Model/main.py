@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('-D', '--data', action='store_true', help='Retrieve Latest VIX Data')
     parser.add_argument('-A', '--artrain', action='store_true', help='Train Autoregressive model')
     parser.add_argument('-H', '--hartrain', action='store_true', help='Train HAR model')
+    parser.add_argument('-F', '--forecast', action='store_true', help='Create Forecasts')
 
     args = parser.parse_args()
 
