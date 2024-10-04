@@ -10,7 +10,7 @@ def train(data, train_start_date='1993-01-19', train_end_date='2004-12-31'):
     X = train_data[['VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']]
     X = sm.add_constant(X)
     model = sm.OLS(y, X)
-    har_model = model.fit()
+    har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
     with open('har_model.pkl', 'wb') as f:
       pickle.dump(har_model, f)
     return har_model
