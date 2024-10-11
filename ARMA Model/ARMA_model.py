@@ -43,6 +43,9 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
         # Initialize list to store predicted values 
         Y_values = [available_data[-2], available_data[-1]]
 
+        # Initialize set of residuals for predictions
+        residuals = model.resid[-2:]
+
         daily_forecast = {'Date': t}
 
         # Get forecast dates
@@ -50,7 +53,13 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
 
         # Collect forecasts for specified horizons
         for h in range(1, steps_ahead+1):
-          Y_pred = c + phi1 * (Y_values[-1] - c) + phi2 * (Y_values[-2] - c)
+          if h == 1: # Residuals available for t-1, t-2
+              Y_pred = c + phi1 * (Y_values[-1] - c) + phi2 * (Y_values[-2] - c) + theta1 * residuals[-1] + theta2 * residuals[-2]
+          elif h == 2: # Residual available for t-2
+              Y_pred = c + phi1 * (Y_values[-1] - c) + phi2 * (Y_values[-2] - c) + theta2 * residuals[-1]
+          else: # No residuals available -> residuals assumed to be 0
+              Y_pred = c + phi1 * (Y_values[-1] - c) + phi2 * (Y_values[-2] - c)
+        
           Y_values.append(Y_pred)
 
           if h in forecast_horizons:
