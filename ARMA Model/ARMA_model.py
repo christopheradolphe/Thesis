@@ -21,17 +21,63 @@ def load():
         loaded_model = pickle.load(f)
     return loaded_model
 
-def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=range(7, 35)):
-    forecasts = []
-    test_dates = vix_data[start_date:end_date].index
+def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2004-12-31"):
+    # Returns a Series with index as dates from start to end and 
 
-    # Extract the relevant model parameters
+    model = load()
     params = model.params
     c = params['const']
     phi1 = params['ar.L1']
     phi2 = params['ar.L2']
     theta1 = params['ma.L1']
     theta2 = params['ma.L2']
+
+    residuals = {}
+
+    resid_dates = vix_data[start_date:end_date].index[1:]
+
+    # First Date: No residual values and no previous values
+    date1 = resid_dates[0]
+    actual = vix_data.loc[date1, "Close"]
+    prediction = c
+    residuals[date1] = actual - prediction
+
+    # Second Date: Residual and lag for only one day previous
+    date2 = resid_dates[1]
+    actual = vix_data.loc[date2, "Close"]
+    prediction = c + phi1 * (vix_data.loc[date1, "Close"] - c) + theta1 * residuals[date2]
+    residuals[date2] = actual - prediction
+
+    for date in resid_dates:
+        date_before = date - pd.offsets.BDay(1)
+        date_2_before = date - pd.offsets.BDay(2)
+        # Residual is found to be 1 day ahead forecast minus actual data
+        actual = vix_data.loc[date, "Close"]
+        prediction = c + phi1 * (vix_data.loc[date_before, "Close"] - c) + phi2 * (vix_data.loc[date_2_before, "Close"] - c) + theta1 * residuals[date_before] + theta2 * residuals[date_2_before]
+        residuals[date] = prediction - actual
+
+    residual_series = pd.Series(residuals)
+    residual_series.to_csv("residuals_model.csv", header=False)
+
+    return 
+
+def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=range(7, 35)):
+    forecasts = []
+    test_dates = vix_data[start_date:end_date].index
+
+    # Extract the relevant model parameters
+    # params = model.params
+    # c = params['const']
+    # phi1 = params['ar.L1']
+    # phi2 = params['ar.L2']
+    # theta1 = params['ma.L1']
+    # theta2 = params['ma.L2']
+
+    c = 20.083
+    phi1 = 1.651
+    phi2 = - 0.654
+    theta1 = - 0.714
+    theta2 = -0.064
 
     for t in test_dates:
         # Get data up to date t
@@ -164,7 +210,8 @@ def performance_summary(forecasts_df, vix_data):
 
     return metrics, errors_df
 
+calculate_resid()
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
 data = data['Close']
-forecasts_df = generate_forecasts(data, train(data), start_date='2004-01-01', end_date='2015-12-30')
+forecasts_df = generate_forecasts(data, train(data), start_date='2008-10-20', end_date='2015-10-30')
 performance_summary(forecasts_df, data)
