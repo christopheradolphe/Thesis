@@ -50,7 +50,7 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
 
         # Collect forecasts for specified horizons
         for h in range(1, steps_ahead+1):
-          Y_pred = c + phi1 * Y_values[-1] + phi2 * Y_values[-2]
+          Y_pred = c + phi1 * (Y_values[-1] - c) + phi2 * (Y_values[-2] - c)
           Y_values.append(Y_pred)
 
           if h in forecast_horizons:
