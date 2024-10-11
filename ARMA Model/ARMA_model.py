@@ -8,9 +8,10 @@ import numpy as np
 def train(data, train_start_date='1993-01-19', train_end_date='2004-12-31'):
     # Modify train set to only include certain dates
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
-    model = AutoReg(train_data.reset_index(drop=True), lags=2)
-    # model = ARIMA(train_data, order=(2,0,2))
+    model = ARIMA(train_data, order=(2,0,2))
     arma_model = model.fit()
+    print("New ARMA(2,2) trained")
+    print(arma_model.summary())
     with open('arma_model.pkl', 'wb') as f:
         pickle.dump(arma_model, f)
     return arma_model
@@ -27,11 +28,10 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
     # Extract the relevant model parameters
     params = model.params
     c = params['const']
-    phi1 = params['Close.L1']
-    phi2 = params['Close.L2']
-    # These currently not used as residuals assumed to be 0
-    # theta1 = params['ma.L1']
-    # theta2 = params['ma.L2']
+    phi1 = params['ar.L1']
+    phi2 = params['ar.L2']
+    theta1 = params['ma.L1']
+    theta2 = params['ma.L2']
 
     for t in test_dates:
         # Get data up to date t
