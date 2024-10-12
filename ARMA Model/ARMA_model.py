@@ -225,7 +225,7 @@ def performance_summary(forecasts_df, vix_data):
 
 # data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
 # # model = load()
-# data = data['Close']
+# data = data['VIX_t']
 # train(data)
 # calculate_resid(data)
 # forecasts_df = generate_forecasts(data, load(), start_date='2004-05-01', end_date='2015-11-30')

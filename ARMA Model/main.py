@@ -35,8 +35,8 @@ if __name__ == '__main__':
             if data.empty or 'Close' not in data.columns:
                 raise ValueError("The file Latest_VIX_Data.csv is empty or contains no usable data.")
 
-            # Only keep 'Close' Data column for AR model
-            data = data['Close']
+            # Only keep 'VIX_t' Data column for AR model
+            data = data['VIX_t']
             
             # Train and save ARMA(2,2) model to pickle file
             ARMA_model.train(data)
