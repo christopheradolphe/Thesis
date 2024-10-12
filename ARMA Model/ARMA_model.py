@@ -84,7 +84,7 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
     theta1 = - 0.714
     theta2 = -0.064
 
-    residuals_series = pd.read_csv("residuals.csv", usecols=["Projected Residuals"])
+    residuals_series = pd.read_csv("residuals.csv", usecols=["Projected Residuals", "Date"], index_col="Date")
 
     for t in test_dates:
         # Get data up to date t
@@ -97,7 +97,7 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
         Y_values = [available_data[-2], available_data[-1]]
 
         # Initialize set of residuals for predictions
-        residuals = residuals_series[available_data.index[-3], available_data.index[-2]]
+        residuals = [residuals_series.loc[available_data.index[-2]].item(), residuals_series.loc[available_data.index[-1]].item()]
 
         daily_forecast = {'Date': t}
 
@@ -218,8 +218,8 @@ def performance_summary(forecasts_df, vix_data):
     return metrics, errors_df
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
-calculate_resid(data)
+# calculate_resid(data)
 # model = load()
-# data = data['Close']
-# forecasts_df = generate_forecasts(data, train(data), start_date='2008-10-20', end_date='2015-10-30')
-# performance_summary(forecasts_df, data)
+data = data['Close']
+forecasts_df = generate_forecasts(data, train(data), start_date='2005-01-01', end_date='2015-10-30')
+performance_summary(forecasts_df, data)
