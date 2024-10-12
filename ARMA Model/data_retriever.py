@@ -40,6 +40,9 @@ def HAR_data_preparation(data):
     # Forward VIX values for HAR output
     for i in range(1, 35):
         data[f'VIX_t+{i}'] = data['VIX_t'].shift(-i)
+
+    # Add name for data column
+    data.index.name = "Date"
     
     # Drop rows with NaN values
     data = data.dropna()
