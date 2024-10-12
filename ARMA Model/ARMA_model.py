@@ -21,7 +21,7 @@ def load():
         loaded_model = pickle.load(f)
     return loaded_model
 
-def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2004-12-31"):
+def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2015-12-31"):
     # Returns a Series with index as dates from start to end and 
 
     model = load()
@@ -60,8 +60,9 @@ def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2004-12-31"
     residual_series = pd.Series(residuals)
     residual_df = pd.concat([residual_series, model.resid], axis=1)
     residual_df.columns = ["Projected Residuals", "Model Residuals"]
-    residual_df['error'] = residual_df['Projected Residuals'] - residual_df['Model Residuals']
-    residual_df.to_csv("residuals_model.csv", header=False)
+    residual_df['Error'] = residual_df['Projected Residuals'] - residual_df['Model Residuals']
+    residual_df.index.name = "Date"
+    residual_df.to_csv("residuals.csv", header=True)
 
     return 
 
@@ -216,7 +217,7 @@ def performance_summary(forecasts_df, vix_data):
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
 calculate_resid(data)
-model = load()
-data = data['Close']
-forecasts_df = generate_forecasts(data, train(data), start_date='2008-10-20', end_date='2015-10-30')
-performance_summary(forecasts_df, data)
+# model = load()
+# data = data['Close']
+# forecasts_df = generate_forecasts(data, train(data), start_date='2008-10-20', end_date='2015-10-30')
+# performance_summary(forecasts_df, data)
