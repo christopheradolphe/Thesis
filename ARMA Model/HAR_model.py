@@ -5,10 +5,13 @@ import pickle
 from statsmodels.tsa.arima.model import ARIMA
 import numpy as np
 
-def train(data, train_start_date='1993-01-19', train_end_date='2004-12-31'):
+def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-12-31'):
     # Train data only in range specified by arguments
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
-    y = train_data['Close']
+    if forecast_size == 1:
+        y = train_data[f'VIX_t']
+    else:
+        y = train_data[f'VIX_t+{forecast_size}']
     X = train_data[['VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']]
     X = sm.add_constant(X)
     model = sm.OLS(y, X)
