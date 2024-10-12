@@ -4,6 +4,7 @@ import yfinance as yf
 import pickle
 from statsmodels.tsa.arima.model import ARIMA
 import numpy as np
+import os
 
 def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
     # Train data only in range specified by arguments
@@ -18,10 +19,14 @@ def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='20
     har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
     return har_model
 
-def train_all(data, forecast_horizon):
+def train_all(data, forecast_horizon, folder_name='har_models'):
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+
     for day in range(1,forecast_horizon+1):
         har_model = train(data, day)
-        with open(f'har_model_{day}.pkl', 'wb') as f:
+        model_path = os.path.join(folder_name, f'har_model_{day}.pkl')
+        with open(model_path, 'wb') as f:
             pickle.dump(har_model, f)       
 
 
@@ -248,6 +253,7 @@ def performance_summary(forecasts_df, vix_data):
 
     return metrics, errors_df
 
-# data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+train_all(data, 34)
 # forecast = generate_har_forecasts(train(data), data, start_date='2004-01-01', end_date='2015-12-30')
 # performance_summary(forecast, data['Close'])
