@@ -165,6 +165,30 @@ def generate_har_forecasts(har_model, data, start_date, end_date, forecast_horiz
 
     return forecasts_df
 
+def output_model_coefficients(forecasts=34, folder_name='har_models'):
+    har_coefficients_list = []
+
+    for day in range(1, forecasts+1):
+        model_path = os.path.join(folder_name, f'har_model_{day}.pkl')
+
+        with open(model_path, 'rb') as f:
+            har_model = pickle.load(f)
+        
+        coefficents = pd.DataFrame(har_model.params).T
+
+        coefficents["Model"] = f'Model_{day}'
+
+        har_coefficients_list.append(coefficents)
+    
+    har_coefficients_df = pd.concat(har_coefficients_list, ignore_index=True)
+    har_coefficients_df.set_index("Model", inplace=True)
+
+    har_coefficients_df.to_csv("HAR_Coefficients.csv")
+
+    print("HAR Coefficnets CSV successfully created and saved to HAR_Coefficients.csv")
+
+    return
+
 def performance_summary(forecasts_df, vix_data):
     """
     Calculate performance metrics for the 34th trading day forecast.
@@ -255,5 +279,6 @@ def performance_summary(forecasts_df, vix_data):
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
 train_all(data, 34)
+output_model_coefficients()
 # forecast = generate_har_forecasts(train(data), data, start_date='2004-01-01', end_date='2015-12-30')
 # performance_summary(forecast, data['Close'])
