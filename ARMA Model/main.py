@@ -22,65 +22,65 @@ if __name__ == '__main__':
         get_latest_data()
         print(f'Data stored in file')
     
-    # elif args.artrain:
-    #     try:
-    #         # Check if file exists
-    #         if not os.path.exists('Latest_VIX_Data.csv'):
-    #             get_latest_data()
+    if args.artrain:
+        try:
+            # Check if file exists
+            if not os.path.exists('Latest_VIX_Data.csv'):
+                get_latest_data()
             
-    #         # Load the data
-    #         data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)
+            # Load the data
+            data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)
             
-    #         # Check if the data is usable (non-empty)
-    #         if data.empty or 'Close' not in data.columns:
-    #             raise ValueError("The file Latest_VIX_Data.csv is empty or contains no usable data.")
+            # Check if the data is usable (non-empty)
+            if data.empty or 'Close' not in data.columns:
+                raise ValueError("The file Latest_VIX_Data.csv is empty or contains no usable data.")
 
-    #         # Only keep 'Close' Data column for AR model
-    #         data = data['Close']
+            # Only keep 'Close' Data column for AR model
+            data = data['Close']
             
-    #         # Train and save ARMA(2,2) model to pickle file
-    #         ARMA_model.train(data)
-    #         print("ARMA(2,2) model trained successfully.")
+            # Train and save ARMA(2,2) model to pickle file
+            ARMA_model.train(data)
+            print("ARMA(2,2) model trained successfully.")
 
-    #     except (FileNotFoundError, ValueError) as e:
-    #         print(f"Error during ARMA model training: {e}")
+        except (FileNotFoundError, ValueError) as e:
+            print(f"Error during ARMA model training: {e}")
 
-    # elif args.hartrain:
-    #     try:
-    #         # Check if file exists
-    #         if not os.path.exists('Latest_VIX_Data.csv'):
-    #             get_latest_data()
+    if args.hartrain:
+        try:
+            # Check if file exists
+            if not os.path.exists('Latest_VIX_Data.csv'):
+                get_latest_data()
             
-    #         # Load the data
-    #         data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)
+            # Load the data
+            data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)
             
-    #         # Check if the data is usable (non-empty)
-    #         required_columns = ['Close', 'VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']
-    #         if data.empty or not set(required_columns).issubset(data.columns):
-    #             raise ValueError("The file Latest_VIX_Data.csv is empty or contains no usable data.")
+            # Check if the data is usable (non-empty)
+            required_columns = ['Close', 'VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']
+            if data.empty or not set(required_columns).issubset(data.columns):
+                raise ValueError("The file Latest_VIX_Data.csv is empty or contains no usable data.")
 
-    #         # Only keep 'Close' Data column for AR model
-    #         data = data['Close']
+            # Only keep 'Close' Data column for AR model
+            data = data['Close']
             
-    #         # Train and save ARMA(2,2) model to pickle file
-    #         ARMA_model.train(data)
-    #         print("HAR model trained successfully.")
+            # Train and save ARMA(2,2) model to pickle file
+            ARMA_model.train(data)
+            print("HAR model trained successfully.")
 
-    #     except (FileNotFoundError, ValueError) as e:
-    #         print(f"Error during ARMA model training: {e}")
+        except (FileNotFoundError, ValueError) as e:
+            print(f"Error during ARMA model training: {e}")
     
-    # elif args.forecast:
-    #     try:
-    #         AR_model = ARMA_model.load()
-    #         if not os.path.exists('Latest_VIX_Data.csv'):
-    #             get_latest_data()    
+    if args.forecast:
+        try:
+            AR_model = ARMA_model.load()
+            if not os.path.exists('Latest_VIX_Data.csv'):
+                get_latest_data()    
 
-    #         data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)['Close']
-    #         forecasts = ARMA_model.generate_forecasts(data, AR_model, start_date='2014-01-01', end_date='2014-01-30')
-    #         ARMA_model.performance_summary(forecasts, data)
+            data = pd.read_csv('Latest_VIX_Data.csv', index_col=0)['Close']
+            forecasts = ARMA_model.generate_forecasts(data, AR_model, start_date='2014-01-01', end_date='2014-01-30')
+            ARMA_model.performance_summary(forecasts, data)
 
-    #     except (FileNotFoundError, ValueError) as e:
-    #         print(f"Error during ARMA model training: {e}")
+        except (FileNotFoundError, ValueError) as e:
+            print(f"Error during ARMA model training: {e}")
     
     else:
         print("Not valid parameters")
