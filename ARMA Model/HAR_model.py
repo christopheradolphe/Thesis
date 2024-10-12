@@ -22,12 +22,11 @@ def train_all(data, forecast_horizon):
     for day in range(1,forecast_horizon+1):
         har_model = train(data, day)
         with open(f'har_model_{day}.pkl', 'wb') as f:
-            pickle.dump(har_model, f)
-        
+            pickle.dump(har_model, f)       
 
 
-def load():
-    with open('har_model.pkl', 'rb') as f:
+def load(forecast_length):
+    with open('har_model_{forecast_length}.pkl', 'rb') as f:
         loaded_model = pickle.load(f)
     return loaded_model
 
