@@ -240,6 +240,6 @@ def performance_summary(forecasts_df, vix_data):
 
     return metrics, errors_df
 
-data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
-forecast = generate_har_forecasts(train(data), data, start_date='2004-01-01', end_date='2015-12-30')
-performance_summary(forecast, data['Close'])
+# data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+# forecast = generate_har_forecasts(train(data), data, start_date='2004-01-01', end_date='2015-12-30')
+# performance_summary(forecast, data['Close'])

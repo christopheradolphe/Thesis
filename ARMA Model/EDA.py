@@ -9,5 +9,5 @@ def correlation_matrix(data):
   plt.title('Correlation Matrix Heatmap')
   plt.show()
 
-data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
-correlation_matrix(data)
+# data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+# correlation_matrix(data)

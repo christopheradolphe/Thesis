@@ -33,6 +33,10 @@ def HAR_data_preparation(data):
     data['S&P Returns_t-1'] = data['S&P Returns'].shift(1)
     data['Volume_t-1'] = data['Volume'].shift(1)
     data['TermSpread_t-1'] = data['TermSpread'].shift(1)
+
+    # Forward VIX values for HAR output
+    for i in range(1, 35):
+        data[f'VIX_t+{i}'] = data['Close'].shift(-i)
     
     # Drop rows with NaN values
     data = data.dropna()
