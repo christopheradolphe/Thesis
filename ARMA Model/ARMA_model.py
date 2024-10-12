@@ -5,7 +5,7 @@ import pickle
 from statsmodels.tsa.ar_model import AutoReg
 import numpy as np
 
-def train(data, train_start_date='1993-01-19', train_end_date='2003-12-31'):
+def train(data, train_start_date='1993-01-19', train_end_date='2004-03-31'):
     # Modify train set to only include certain dates
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
     model = ARIMA(train_data, order=(2,0,2))
@@ -31,6 +31,12 @@ def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2015-12-31"
     phi2 = params['ar.L2']
     theta1 = params['ma.L1']
     theta2 = params['ma.L2']
+
+    # c = 20.083
+    # phi1 = 1.651
+    # phi2 = -0.654
+    # theta1 = -0.714
+    # theta2 = -0.064
 
     residuals = {}
 
@@ -77,6 +83,12 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
     phi2 = params['ar.L2']
     theta1 = params['ma.L1']
     theta2 = params['ma.L2']
+
+    # c = 20.083
+    # phi1 = 1.651
+    # phi2 = -0.654
+    # theta1 = -0.714
+    # theta2 = -0.064
 
     residuals_series = pd.read_csv("residuals.csv", usecols=["Projected Residuals", "Date"], index_col="Date")
 
