@@ -34,9 +34,12 @@ def HAR_data_preparation(data):
     data['Volume_t-1'] = data['Volume'].shift(1)
     data['TermSpread_t-1'] = data['TermSpread'].shift(1)
 
+    # Rename Close Vix Column to VIX_t
+    data = data.rename(columns={'Close': 'VIX_t'})
+
     # Forward VIX values for HAR output
     for i in range(1, 35):
-        data[f'VIX_t+{i}'] = data['Close'].shift(-i)
+        data[f'VIX_t+{i}'] = data['VIX_t'].shift(-i)
     
     # Drop rows with NaN values
     data = data.dropna()
