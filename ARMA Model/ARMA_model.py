@@ -34,7 +34,7 @@ def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2004-12-31"
 
     residuals = {}
 
-    resid_dates = vix_data[start_date:end_date].index[1:]
+    resid_dates = vix_data[start_date:end_date].index
 
     # First Date: No residual values and no previous values
     date1 = resid_dates[0]
@@ -45,18 +45,22 @@ def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2004-12-31"
     # Second Date: Residual and lag for only one day previous
     date2 = resid_dates[1]
     actual = vix_data.loc[date2, "Close"]
-    prediction = c + phi1 * (vix_data.loc[date1, "Close"] - c) + theta1 * residuals[date2]
+    prediction = c + phi1 * (vix_data.loc[date1, "Close"] - c) + theta1 * residuals[date1]
     residuals[date2] = actual - prediction
 
-    for date in resid_dates:
-        date_before = date - pd.offsets.BDay(1)
-        date_2_before = date - pd.offsets.BDay(2)
+    for date in resid_dates[2:]:
+        dates = vix_data[:date].index
+        date_before = dates[-2]
+        date_2_before = dates[-3]
         # Residual is found to be 1 day ahead forecast minus actual data
         actual = vix_data.loc[date, "Close"]
         prediction = c + phi1 * (vix_data.loc[date_before, "Close"] - c) + phi2 * (vix_data.loc[date_2_before, "Close"] - c) + theta1 * residuals[date_before] + theta2 * residuals[date_2_before]
-        residuals[date] = prediction - actual
+        residuals[date] = actual - prediction
 
     residual_series = pd.Series(residuals)
+    residuals_df = pd.concat([residual_series, model.resid], axis=1)
+    residuals_df.columns = ["Projected Residuals", "Model Residuals"]
+    residual_series['error'] = residual_series['Projected Residuals'] - residual_series['Model Residuals']
     residual_series.to_csv("residuals_model.csv", header=False)
 
     return 
@@ -210,8 +214,9 @@ def performance_summary(forecasts_df, vix_data):
 
     return metrics, errors_df
 
-calculate_resid()
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+calculate_resid(data)
+model = load()
 data = data['Close']
 forecasts_df = generate_forecasts(data, train(data), start_date='2008-10-20', end_date='2015-10-30')
 performance_summary(forecasts_df, data)
