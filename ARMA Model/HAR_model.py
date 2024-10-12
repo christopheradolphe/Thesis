@@ -5,20 +5,26 @@ import pickle
 from statsmodels.tsa.arima.model import ARIMA
 import numpy as np
 
-def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-12-31'):
+def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
     # Train data only in range specified by arguments
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
     if forecast_size == 1:
         y = train_data[f'VIX_t']
     else:
-        y = train_data[f'VIX_t+{forecast_size}']
+        y = train_data[f'VIX_t+{forecast_size - 1}']
     X = train_data[['VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']]
     X = sm.add_constant(X)
     model = sm.OLS(y, X)
     har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
-    with open('har_model.pkl', 'wb') as f:
-      pickle.dump(har_model, f)
     return har_model
+
+def train_all(data, forecast_horizon):
+    for day in range(1,forecast_horizon+1):
+        har_model = train(data, day)
+        with open(f'har_model_{day}.pkl', 'wb') as f:
+            pickle.dump(har_model, f)
+        
+
 
 def load():
     with open('har_model.pkl', 'rb') as f:
