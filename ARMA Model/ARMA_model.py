@@ -58,10 +58,10 @@ def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2004-12-31"
         residuals[date] = actual - prediction
 
     residual_series = pd.Series(residuals)
-    residuals_df = pd.concat([residual_series, model.resid], axis=1)
-    residuals_df.columns = ["Projected Residuals", "Model Residuals"]
-    residual_series['error'] = residual_series['Projected Residuals'] - residual_series['Model Residuals']
-    residual_series.to_csv("residuals_model.csv", header=False)
+    residual_df = pd.concat([residual_series, model.resid], axis=1)
+    residual_df.columns = ["Projected Residuals", "Model Residuals"]
+    residual_df['error'] = residual_df['Projected Residuals'] - residual_df['Model Residuals']
+    residual_df.to_csv("residuals_model.csv", header=False)
 
     return 
 
