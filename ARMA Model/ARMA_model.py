@@ -84,6 +84,8 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
     theta1 = - 0.714
     theta2 = -0.064
 
+    residuals_series = pd.read_csv("residuals.csv", usecols=["Projected Residuals"])
+
     for t in test_dates:
         # Get data up to date t
         available_data = vix_data[:t]
@@ -95,7 +97,7 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
         Y_values = [available_data[-2], available_data[-1]]
 
         # Initialize set of residuals for predictions
-        residuals = model.resid[-2:]
+        residuals = residuals_series[available_data.index[-3], available_data.index[-2]]
 
         daily_forecast = {'Date': t}
 
