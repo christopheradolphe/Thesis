@@ -5,6 +5,7 @@ import pickle
 from statsmodels.tsa.arima.model import ARIMA
 import numpy as np
 import os
+import time
 
 def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
     # Train data only in range specified by arguments
@@ -54,6 +55,8 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
     Returns:
     - forecasts_df: DataFrame containing forecasts for each date and horizon.
     """
+
+    start_time = time.time()
     forecasts = []
     test_dates = data[start_date:end_date].index
 
@@ -90,6 +93,8 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
 
         forecasts.append(daily_forecast)
 
+    end_time = time.time()
+    print(f"Total time to Forecast HAR model for {max(forecast_horizons)} day forecasts: {end_time-start_time}")
     # Convert forecasts to DataFrame
     forecasts_df = pd.DataFrame(forecasts)
     forecasts_df.set_index('Date', inplace=True)
@@ -126,7 +131,7 @@ def output_model_coefficients(forecasts=34, folder_name='har_models'):
 
     return
 
-def performance_summary(forecasts_df, vix_data):
+def performance_summary(vix_data):
     """
     Calculate performance metrics for the 34th trading day forecast.
 
@@ -139,6 +144,7 @@ def performance_summary(forecasts_df, vix_data):
     - errors_df: DataFrame containing the errors and actual vs. forecasted values for each date.
     """
     # Ensure the index is datetime
+    forecasts_df = pd.read_csv("HAR_Forecasts.csv", index_col=0)
     forecasts_df.index = pd.to_datetime(forecasts_df.index)
     vix_data.index = pd.to_datetime(vix_data.index)
 
@@ -149,15 +155,15 @@ def performance_summary(forecasts_df, vix_data):
     # Loop through each date in forecasts_df
     for t in forecasts_df.index:
         # Get the forecasted value for the 34th horizon
-        forecast_value = forecasts_df.loc[t, '34']
+        forecast_value = forecasts_df.loc[t, '20']
 
         # Calculate the date 34 business days ahead
-        t_plus_34 = t + pd.offsets.BusinessDay(34)
+        t_plus_34 = t + pd.offsets.BusinessDay(1)
 
         # Check if the actual value exists in vix_data
         if t_plus_34 in vix_data.index:
             # Get the actual VIX value at t_plus_34
-            actual_value = vix_data.loc[t_plus_34]
+            actual_value = vix_data.loc[t, "VIX_t+19"]
 
             # Store the values
             actual_values.append(actual_value)
@@ -217,6 +223,5 @@ def performance_summary(forecasts_df, vix_data):
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
 # train_all(data, 34)
 # output_model_coefficients()
-generate_har_forecasts(data, start_date='2004-05-01', end_date='2015-11-30')
-# forecast = generate_har_forecasts(train(data), data, start_date='2004-01-01', end_date='2015-12-30')
-# performance_summary(forecast, data['Close'])
+# generate_har_forecasts(data, start_date='2004-05-01', end_date='2015-10-30')
+performance_summary(data)

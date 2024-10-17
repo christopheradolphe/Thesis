@@ -161,7 +161,7 @@ def performance_summary(forecasts_df, vix_data):
         forecast_value = forecasts_df.loc[t, '34']
 
         # Calculate the date 34 business days ahead
-        t_plus_34 = t + pd.offsets.BusinessDay(34)
+        t_plus_34 = t + pd.offsets.BusinessDay(32)
 
         # Check if the actual value exists in vix_data
         if t_plus_34 in vix_data.index:
@@ -223,10 +223,10 @@ def performance_summary(forecasts_df, vix_data):
 
     return metrics, errors_df
 
-# data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
 # # model = load()
-# data = data['VIX_t']
-# train(data)
-# calculate_resid(data)
-# forecasts_df = generate_forecasts(data, load(), start_date='2004-05-01', end_date='2015-11-30')
-# performance_summary(forecasts_df, data)
+data = data['VIX_t']
+train(data)
+calculate_resid(data)
+forecasts_df = generate_forecasts(data, load(), start_date='2004-05-01', end_date='2015-11-30')
+performance_summary(forecasts_df, data)
