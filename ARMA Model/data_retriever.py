@@ -2,18 +2,37 @@ import pandas as pd
 import yfinance as yf
 from pandas_datareader import data as web
 import time
+import numpy as np
 
 def load_vix_data(start_date='1990-01-02', end_date='2023-12-31'):
     vix_data = yf.download('^VIX', start=start_date, end=end_date)
     vix_data = vix_data['Close'].dropna()  # Keep only the 'Close' column and drop NaN values
+    log_vix = np.log(vix_data)
+    vix_data = pd.concat(vix_data, log_vix)
     return vix_data
 
 def load_sp500_data(start_date='1990-01-02', end_date='2023-12-31'):
     adjusted_start_date = (pd.to_datetime(start_date) - pd.tseries.offsets.BDay(1))
     sp500_data = yf.download('^GSPC', start=adjusted_start_date, end=end_date)
-    sp500_data = sp500_data[['Close', 'Volume']].dropna()
-    sp500_data['S&P Returns'] = sp500_data['Close'].pct_change()
-    return sp500_data.drop(columns = ['Close']).drop(sp500_data.index[0])
+
+    sp500_close = sp500_data['Close'].dropna()
+    sp500_volume = sp500_data['Volume'].dropna()
+
+    # Calculate k log returns for the periods specified
+    k_values = [1, 5, 10, 22, 66]
+    for k in k_values:
+        sp500_close[f'SP500_Log_Return_{k}'] = np.log(sp500_close / sp500_close.shift(k))
+    
+    # Calculate first difference of logorithm for S&P 500 Volume
+    sp500_volume = sp500_volume.replace(0, np.nan)
+    sp500_volume = sp500_volume.dropna()
+    sp500_volume_log = np.log(sp500_volume)
+    sp500_volume_log_diff = sp500_volume_log.diff()
+    sp500_volume_log_diff.name = 'SP500_Volume_Change'
+
+    # Combine Close and Volume data
+    sp500_data_combined = pd.concat([sp500_close, sp500_close[[col for col in sp500_close.columns if 'SP500_Log_Return' in col]], sp500_volume_log_diff], axis=1)
+    return sp500_data_combined
 
 def load_term_spread(start_date='1990-01-02', end_date='2023-12-31'):
     dgs10 = web.DataReader('DGS10', 'fred', start_date, end_date)
