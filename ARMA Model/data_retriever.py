@@ -1,12 +1,11 @@
 import pandas as pd
 import yfinance as yf
-from pandas_datareader import data as web
 import time
 import numpy as np
 from fredapi import Fred
 
 # Set your FRED API key
-fred = Fred(api_key='YOUR_FRED_API_KEY')
+fred = Fred(api_key='cdbebbf260397c58ad92162f048ac8eb')
 
 def load_vix_data(start_date='1990-01-02', end_date='2023-12-31'):
     vix_data = yf.download('^VIX', start=start_date, end=end_date)
@@ -21,15 +20,15 @@ def load_sp500_data(start_date='1990-01-02', end_date='2023-12-31'):
     adjusted_start_date = (pd.to_datetime(start_date) - pd.tseries.offsets.BDay(1))
     sp500_data = yf.download('^GSPC', start=adjusted_start_date, end=end_date)
 
-    sp500_close = sp500_data['Close'].dropna()
-    sp500_close.name = "SP500_Close"
+    sp500_close = sp500_data[['Close']].dropna()
+    sp500_close = sp500_close.rename(columns={'Close': 'SP500_Close'})
     sp500_volume = sp500_data['Volume'].dropna()
     sp500_volume.name = "SP500_Volume"
 
     # Calculate k log returns for the periods specified
     k_values = [1, 5, 10, 22, 66]
     for k in k_values:
-        sp500_close[f'SP500_Log_Return_{k}'] = np.log(sp500_close / sp500_close.shift(k))
+        sp500_close[f'SP500_Log_Return_{k}'] = np.log(sp500_close['SP500_Close'] / sp500_close['SP500_Close'].shift(k))
     
     # Calculate first difference of logorithm for S&P 500 Volume
     sp500_volume = sp500_volume.replace(0, np.nan)
@@ -39,7 +38,7 @@ def load_sp500_data(start_date='1990-01-02', end_date='2023-12-31'):
     sp500_volume_log_diff.name = 'SP500_Volume_Change'
 
     # Combine Close and Volume data
-    sp500_data_combined = pd.concat([sp500_close, sp500_close[[col for col in sp500_close.columns if 'SP500_Log_Return' in col]], sp500_volume, sp500_volume_log_diff], axis=1)
+    sp500_data_combined = pd.concat([sp500_close['SP500_Close'], sp500_close[[col for col in sp500_close.columns if 'SP500_Log_Return' in col]], sp500_volume, sp500_volume_log_diff], axis=1)
     return sp500_data_combined
 
 def load_oil_data(start_date='1990-01-02', end_date='2023-12-31'):
@@ -74,9 +73,9 @@ def load_credit_spread(start_date='1990-01-02', end_date='2013-01-15'):
     credit_spread = credit_spread.fillna(method='ffill')
     return credit_spread
 
-def load_term_spread(start_date='1990-01-02', end_date='2023-12-31'):
-    dgs10 = web.DataReader('DGS10', 'fred', start_date, end_date)
-    dgs3mo = web.DataReader('DGS3MO', 'fred', start_date, end_date)
+def load_term_spread(start_date='1990-01-02', end_date='2013-01-15'):
+    dgs10 = fred.get_series('DGS10', observation_start=start_date, observation_end=end_date)
+    dgs3mo = fred.get_series('DGS3MO', observation_start=start_date, observation_end=end_date)
     term_spread = dgs10 - dgs3mo
     term_spread.name = 'Term_Spread'
     term_spread = term_spread.fillna(method='ffill')
