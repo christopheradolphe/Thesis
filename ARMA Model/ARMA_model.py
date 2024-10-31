@@ -32,6 +32,7 @@ def calculate_resid(vix_data, start_date = "1993-02-19", end_date = "2015-12-31"
     theta1 = params['ma.L1']
     theta2 = params['ma.L2']
 
+    # Cheng Residuals
     # c = 20.083
     # phi1 = 1.651
     # phi2 = -0.654
@@ -84,6 +85,7 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
     theta1 = params['ma.L1']
     theta2 = params['ma.L2']
 
+    # Cheng Parameters
     # c = 20.083
     # phi1 = 1.651
     # phi2 = -0.654
@@ -134,6 +136,75 @@ def generate_forecasts(vix_data, model, start_date, end_date, forecast_horizons=
 
     forecasts_df.to_csv('ARMA_Forecasts.csv', index=True)
     return forecasts_df
+
+def cheng_compare_forecasts(vix_data, model, csv_file='/Users/christopheradolphe/Desktop/Thesis/ARMA Model/e_vix_arma_ttm_t34.csv', forecast_horizons=[34]):
+    # Read the CSV file and ensure the date column is in datetime format
+    csv_data = pd.read_csv(csv_file)
+    csv_data['dt'] = pd.to_datetime(csv_data['dt'])
+
+    # Filter for dates before the end of 2015
+    test_dates = csv_data[csv_data['dt'] < '2016-01-01']['dt']
+
+    # Ensure the index of vix_data is in datetime format
+    vix_data.index = pd.to_datetime(vix_data.index)
+
+    # Extract the relevant model parameters
+    params = model.params
+    c = params['const']
+    phi1 = params['ar.L1']
+    phi2 = params['ar.L2']
+    theta1 = params['ma.L1']
+    theta2 = params['ma.L2']
+
+    # Cheng Parameters
+    # c = 20.083
+    # phi1 = 1.651
+    # phi2 = -0.654
+    # theta1 = -0.714
+    # theta2 = -0.64
+
+
+    residuals_series = pd.read_csv("residuals.csv", usecols=["Projected Residuals", "Date"], index_col="Date")
+    residuals_series.index = pd.to_datetime(residuals_series.index)
+
+    # List to store the 34-day forecasts
+    forecasts = []
+
+    for t in test_dates:
+        # Get data up to date t
+        available_data = vix_data[:t]
+
+        # Initialize list to store predicted values 
+        Y_values = [available_data[-2], available_data[-1]]
+
+        # Initialize set of residuals for predictions
+        residuals = [residuals_series.loc[available_data.index[-2]].item(), residuals_series.loc[available_data.index[-1]].item()]
+
+        # Generate forecast for 34 days ahead
+        Y_pred_34 = None  # Variable to hold the 34-day forecast
+        for h in range(1, max(forecast_horizons) + 1):
+            if h == 1:  # Residuals available for t-1, t-2
+                Y_pred = c + phi1 * (Y_values[-1] - c) + phi2 * (Y_values[-2] - c) + theta1 * residuals[-1] + theta2 * residuals[-2]
+            elif h == 2:  # Residual available for t-2
+                Y_pred = c + phi1 * (Y_values[-1] - c) + phi2 * (Y_values[-2] - c) + theta2 * residuals[-1]
+            else:  # No residuals available -> residuals assumed to be 0
+                Y_pred = c + phi1 * (Y_values[-1] - c) + phi2 * (Y_values[-2] - c)
+
+            Y_values.append(Y_pred)
+
+            # Store the 34-day forecast
+            if h == 34:
+                Y_pred_34 = Y_pred  # Store the 34-day ahead forecast
+
+        forecasts.append(Y_pred_34)
+
+    # Add the 34-day forecasts to the CSV under a new column 'chris_e_vix'
+    csv_data.loc[csv_data['dt'] < '2016-01-01', 'chris_e_vix'] = forecasts
+
+    # Save the modified CSV with the new column
+    csv_data.to_csv(csv_file, index=False)
+
+    return csv_data
 
 def performance_summary(forecasts_df, vix_data):
     """
@@ -228,5 +299,5 @@ data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_V
 data = data['VIX_t']
 train(data)
 calculate_resid(data)
-forecasts_df = generate_forecasts(data, load(), start_date='2004-05-01', end_date='2015-11-30')
-performance_summary(forecasts_df, data)
+forecasts_df = cheng_compare_forecasts(data, load())
+# performance_summary(forecasts_df, data)
