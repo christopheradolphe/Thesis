@@ -12,7 +12,7 @@ def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='20
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
     y = train_data[f'VIX_t+{forecast_size}']
     X = train_data[['Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 'Log_VIX_MA_22', 'Log_VIX_MA_66', 'SP500_Log_Return_1', 'SP500_Log_Return_5',
-     'SP500_Log_Return_5', 'SP500_Log_Return_10', 'SP500_Log_Return_22', 'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 'Term_Spread']]
+     'SP500_Log_Return_10', 'SP500_Log_Return_22', 'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 'Term_Spread']]
     X = sm.add_constant(X)
     model = sm.OLS(y, X)
     har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
@@ -142,13 +142,16 @@ def performance_summary(vix_data):
     Calculate performance metrics for the 34th trading day forecast.
 
     Parameters:
-    - forecasts_df: DataFrame containing forecasts with 'Date' as index and horizons as columns.
     - vix_data: Series or DataFrame containing the actual VIX values with dates as index.
 
     Returns:
-    - metrics: Dictionary containing RMSE, MAE, MAPE, and R^2 for the 34th trading day forecast.
+    - metrics: Dictionary containing MFE, SDFE, MSE, MAE, and R^2 for the 34th trading day forecast.
     - errors_df: DataFrame containing the errors and actual vs. forecasted values for each date.
     """
+    import pandas as pd
+    import numpy as np
+    import statsmodels.api as sm
+
     # Ensure the index is datetime
     forecasts_df = pd.read_csv("HAR_Forecasts.csv", index_col=0)
     forecasts_df.index = pd.to_datetime(forecasts_df.index)
@@ -157,23 +160,34 @@ def performance_summary(vix_data):
     # Initialize lists to store actual and forecasted values
     actual_values = []
     forecast_values = []
+    forecast_dates = []
 
     # Loop through each date in forecasts_df
     for t in forecasts_df.index:
+        # Check if horizon '34' is in forecasts_df columns
+        if '34' not in forecasts_df.columns:
+            continue  # Skip if the horizon is not available
+
         # Get the forecasted value for the 34th horizon
-        forecast_value = forecasts_df.loc[t, '20']
+        forecast_value = forecasts_df.loc[t, '34']
 
         # Calculate the date 34 business days ahead
-        t_plus_34 = t + pd.offsets.BusinessDay(1)
+        t_plus_34 = t + pd.offsets.BusinessDay(34)
 
         # Check if the actual value exists in vix_data
         if t_plus_34 in vix_data.index:
             # Get the actual VIX value at t_plus_34
-            actual_value = vix_data.loc[t, "VIX_t+19"]
+            if isinstance(vix_data, pd.Series):
+                actual_value = vix_data.loc[t_plus_34]
+            elif isinstance(vix_data, pd.DataFrame):
+                actual_value = vix_data.loc[t_plus_34, 'VIX_Close']  # Adjust 'VIX' to the correct column name
+            else:
+                continue
 
             # Store the values
             actual_values.append(actual_value)
             forecast_values.append(forecast_value)
+            forecast_dates.append(t)
         else:
             # Skip if the actual value is not available
             continue
@@ -185,48 +199,48 @@ def performance_summary(vix_data):
     # Calculate Errors
     errors = forecast_values - actual_values
     absolute_errors = np.abs(errors)
-    percentage_errors = np.abs(errors / actual_values) * 100  # For MAPE
 
     # Calculate performance metrics
+    mfe = np.mean(errors)
+    sdfe = np.std(errors, ddof=1)  # Sample standard deviation
     mse = np.mean(errors ** 2)
-    rmse = np.sqrt(mse)
     mae = np.mean(absolute_errors)
-    mape = np.mean(percentage_errors)
 
-    # Calculate out-of-sample R^2
-    ss_res = np.sum(errors ** 2)
-    ss_tot = np.sum((actual_values - np.mean(actual_values)) ** 2)
-    r_squared = 1 - (ss_res / ss_tot)
+    # Mincer-Zarnowitz Regression
+    X = sm.add_constant(forecast_values)  # Add intercept
+    model = sm.OLS(actual_values, X).fit()
+    r_squared = model.rsquared
 
     # Create a dictionary of metrics
     metrics = {
-        'RMSE': rmse,
+        'MFE': mfe,
+        'SDFE': sdfe,
+        'MSE': mse,
         'MAE': mae,
-        'MAPE': mape,
         'R_squared': r_squared
     }
 
     print(f"Performance Metrics for the 34th Trading Day Forecast:")
-    print(f"RMSE: {rmse}")
+    print(f"MFE: {mfe}")
+    print(f"SDFE: {sdfe}")
+    print(f"MSE: {mse}")
     print(f"MAE: {mae}")
-    print(f"MAPE: {mape}%")
-    print(f"Out-of-sample R^2: {r_squared}")
+    print(f"Mincer-Zarnowitz R^2: {r_squared}")
 
     # Create a DataFrame for errors and actual vs. forecasted values
     errors_df = pd.DataFrame({
-        'Forecast_Date': forecasts_df.index[:len(errors)],
-        'Actual_Date': forecasts_df.index[:len(errors)] + pd.offsets.BusinessDay(34),
+        'Forecast_Date': forecast_dates,
+        'Actual_Date': [t + pd.offsets.BusinessDay(34) for t in forecast_dates],
         'Actual_Value': actual_values,
         'Forecast_Value': forecast_values,
         'Error': errors,
         'Absolute_Error': absolute_errors,
-        'Percentage_Error': percentage_errors
     })
     errors_df.set_index('Forecast_Date', inplace=True)
 
     return metrics, errors_df
 
-data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
 # train_all(data, 34)
 # output_model_coefficients()
 # generate_har_forecasts(data, start_date='2004-05-01', end_date='2015-10-30')
