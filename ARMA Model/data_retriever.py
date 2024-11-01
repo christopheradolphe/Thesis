@@ -11,9 +11,19 @@ def load_vix_data(start_date='1990-01-02', end_date='2023-12-31'):
     vix_data = yf.download('^VIX', start=start_date, end=end_date)
     vix_data = vix_data['Close'].dropna()  # Keep only the 'Close' column and drop NaN values
     log_vix = np.log(vix_data)
-    log_vix.name = 'Log_VIX_Close'
-    vix_data.name = 'VIX_Close'
+    log_vix = log_vix.to_frame(name='Log_VIX')
+
+    # Calculate the averages over k days
+    k_values = [1, 5, 10, 22, 66]
+    for k in k_values:
+        log_vix[f'Log_VIX_MA_{k}'] = log_vix['Log_VIX'].rolling(window=k).mean()
+    
+    log_vix.drop(['Log_VIX'], axis = 1, inplace = True)
+    
     vix_data = pd.concat([vix_data, log_vix], axis=1)
+
+    vix_data = vix_data.rename(columns={'Close': 'VIX_Close'})
+
     return vix_data
 
 def load_sp500_data(start_date='1990-01-02', end_date='2023-12-31'):
@@ -55,25 +65,43 @@ def load_oil_data(start_date='1990-01-02', end_date='2023-12-31'):
         oil_data[f'Oil_Log_Return_{k}'] = oil_data - oil_data.shift(k)
     return oil_data
 
-def load_usd_data(start_date='1990-01-02', end_date='2013-01-15'):
-    # Use the Trade Weighted U.S. Dollar Index: Broad
-    usd_data = fred.get_series('DTWEXBGS', observation_start=start_date, observation_end=end_date)
-    usd_data = usd_data.replace('.', np.nan).astype(float).fillna(method='ffill')
-    usd_data = usd_data.replace(0, np.nan).dropna()
+def load_usd_data(start_date='1990-01-02', end_date='2023-12-31'):
+    # Use the Trade Weighted U.S. Dollar Index: Major Currencies
+    usd_data = fred.get_series('DTWEXM', observation_start=start_date, observation_end=end_date)
+    usd_data = usd_data.fillna(method='ffill').dropna()
     usd_data = np.log(usd_data)
     usd_change = usd_data.diff()
     usd_change.name = 'USD_Change'
     return usd_change
 
 def load_credit_spread(start_date='1990-01-02', end_date='2013-01-15'):
+    # Retrieve monthly data
     baa_yield = fred.get_series('BAA', observation_start=start_date, observation_end=end_date)
     aaa_yield = fred.get_series('AAA', observation_start=start_date, observation_end=end_date)
-    credit_spread = baa_yield - aaa_yield
-    credit_spread.name = 'Credit_Spread'
-    credit_spread = credit_spread.fillna(method='ffill')
-    return credit_spread
+    
+    # Combine into a DataFrame
+    credit_spread = pd.concat([baa_yield, aaa_yield], axis=1)
+    credit_spread.columns = ['BAA_Yield', 'AAA_Yield']
+    
+    # Calculate the credit spread
+    credit_spread['Credit_Spread'] = credit_spread['BAA_Yield'] - credit_spread['AAA_Yield']
+    
+    # Set index as datetime
+    credit_spread.index = pd.to_datetime(credit_spread.index)
+    
+    # Resample to daily frequency
+    credit_spread_daily = credit_spread.resample('B').interpolate(method='linear')
+    
+    # Select the 'Credit_Spread' column
+    credit_spread_daily = credit_spread_daily['Credit_Spread']
+    
+    # Trim data to the desired date range
+    credit_spread_daily = credit_spread_daily.loc[start_date:end_date]
+    
+    return credit_spread_daily
 
-def load_term_spread(start_date='1990-01-02', end_date='2013-01-15'):
+
+def load_term_spread(start_date='1990-01-02', end_date='2023-12-31'):
     dgs10 = fred.get_series('DGS10', observation_start=start_date, observation_end=end_date)
     dgs3mo = fred.get_series('DGS3MO', observation_start=start_date, observation_end=end_date)
     term_spread = dgs10 - dgs3mo
@@ -82,11 +110,50 @@ def load_term_spread(start_date='1990-01-02', end_date='2013-01-15'):
     return term_spread
 
 def load_ff_deviation(start_date='1990-01-02', end_date='2023-12-31'):
-    effective_ffr = fred.get_series('FEDFUNDS', observation_start=start_date, observation_end=end_date)
-    target_ffr = fred.get_series('DFEDTAR', observation_start=start_date, observation_end=end_date)
+    # Effective Federal Funds Rate (Daily, only available after July 2000)
+    effective_ffr_recent = fred.get_series('EFFR', observation_start='2000-07-01', observation_end=end_date)
+
+    # Monthly Effective Federal Funds Rate (available from July 1954 to present)
+    effective_ffr_old = fred.get_series('FEDFUNDS', observation_start=start_date, observation_end='2000-06-30')
+
+    # Convert monthly data to daily frequency and interpolate
+    effective_ffr_old = effective_ffr_old.resample('D').interpolate(method='linear')
+    
+    # Combine the two series
+    effective_ffr = pd.concat([effective_ffr_old, effective_ffr_recent])
+    
+    # Federal Funds Target Rate (up to 2008-12-15)
+    target_ffr_old = fred.get_series('DFEDTAR', observation_start=start_date, observation_end='2008-12-15')
+    
+    # Federal Funds Target Range Upper Limit (from 2008-12-16 onward)
+    target_ffr_upper = fred.get_series('DFEDTARU', observation_start='2008-12-16', observation_end=end_date)
+    
+    # Federal Funds Target Range Lower Limit (from 2008-12-16 onward)
+    target_ffr_lower = fred.get_series('DFEDTARL', observation_start='2008-12-16', observation_end=end_date)
+    
+    # Calculate the midpoint of the target range
+    target_ffr_new = (target_ffr_upper + target_ffr_lower) / 2.0
+    target_ffr_new.name = 'Target Rate'
+    
+    # Combine old and new target rates
+    target_ffr = pd.concat([target_ffr_old, target_ffr_new])
+    target_ffr.sort_index(inplace=True)
+    
+    # Forward-fill target rate to get daily data
+    all_dates = pd.date_range(start_date, end_date, freq='D')
+    target_ffr = target_ffr.reindex(all_dates)
+    target_ffr = target_ffr.fillna(method='ffill')
+    
+    # Align effective_ffr with target_ffr
+    effective_ffr = effective_ffr.reindex(all_dates)
+    
+    # Compute deviation
     ff_deviation = effective_ffr - target_ffr
     ff_deviation.name = 'FF_Deviation'
-    ff_deviation = ff_deviation.fillna(method='ffill')
+    
+    # Drop missing values
+    ff_deviation = ff_deviation.dropna()
+    
     return ff_deviation
 
 def get_latest_data(start_date='1993-01-19', end_date='2023-12-31'):
@@ -97,20 +164,25 @@ def get_latest_data(start_date='1993-01-19', end_date='2023-12-31'):
     vix_data = load_vix_data(start_date, end_date)
     sp500_data = load_sp500_data(start_date, end_date)
     oil_data = load_oil_data(start_date, end_date)
+    print(f"Oil Nans: {oil_data.isna().sum()}")
     usd_change = load_usd_data(start_date, end_date)
+    print(f"USD Nans: {usd_change.isna().sum()}")
     credit_spread = load_credit_spread(start_date, end_date)
+    print(f"Credit Spread Nans: {credit_spread.isna().sum()}")
     term_spread = load_term_spread(start_date, end_date)
-    ff_deviation = load_ff_deviation(start_date, end_date)
+    print(f"Term Spread Nans: {term_spread.isna().sum()}")
+
+    ff_deviation = load_ff_deviation(start_date, end_date) # Starts out good and then ends only once a month
 
     # Combine all data into a single DataFrame
-    data = pd.concat([vix_data, sp500_data, oil_data, usd_change, credit_spread, term_spread, ff_deviation], axis=1)
+    data = pd.concat([vix_data, sp500_data, oil_data, usd_change, term_spread], axis=1)
 
     # Drop rows with missing values
     data = data.dropna()
 
     # Forward VIX values for HAR output
     for i in range(1, 35):
-        data[f'VIX_t+{i}'] = data['VIX_t'].shift(-i)
+        data[f'VIX_t+{i}'] = data['VIX_Close'].shift(-i)
 
     # Store data to CSV
     filename = f'Latest_VIX_Data.csv'
