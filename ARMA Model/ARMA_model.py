@@ -294,10 +294,11 @@ def performance_summary(forecasts_df, vix_data):
 
     return metrics, errors_df
 
-data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/ARMA Model/Latest_VIX_Data.csv', index_col=0)
+data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
 # # model = load()
-data = data['VIX_t']
+data = data['VIX_Close']
 train(data)
 calculate_resid(data)
-forecasts_df = cheng_compare_forecasts(data, load())
-# performance_summary(forecasts_df, data)
+forecasts_df = generate_forecasts(data, load(), '2004-03-31', '2015-12-31', forecast_horizons=range(7, 35))
+#forecasts_df = cheng_compare_forecasts(data, load())
+performance_summary(forecasts_df, data)

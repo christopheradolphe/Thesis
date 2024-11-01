@@ -10,11 +10,9 @@ import time
 def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
     # Train data only in range specified by arguments
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
-    if forecast_size == 1:
-        y = train_data[f'VIX_t']
-    else:
-        y = train_data[f'VIX_t+{forecast_size - 1}']
-    X = train_data[['VIX_t-1', 'VIX_t-5', 'VIX_t-22', 'S&P Returns_t-1', 'Volume_t-1', 'TermSpread_t-1']]
+    y = train_data[f'VIX_t+{forecast_size}']
+    X = train_data[['Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 'Log_VIX_MA_22', 'Log_VIX_MA_66', 'SP500_Log_Return_1', 'SP500_Log_Return_5',
+     'SP500_Log_Return_5', 'SP500_Log_Return_10', 'SP500_Log_Return_22', 'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 'Term_Spread']]
     X = sm.add_constant(X)
     model = sm.OLS(y, X)
     har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
