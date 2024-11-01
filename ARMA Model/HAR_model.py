@@ -71,14 +71,22 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
             har_model = load(h)
 
             X_new = {
-                    'const': 1,  # Add constant (intercept)
-                    'VIX_t-1': latest_data['VIX_t-1'],  # Lag 1
-                    'VIX_t-5': latest_data['VIX_t-5'],  # Lag 5
-                    'VIX_t-22': latest_data['VIX_t-22'],  # Lag 22
-                    'S&P Returns_t-1': latest_data['S&P Returns_t-1'],  # S&P Returns
-                    'Volume_t-1': latest_data['Volume_t-1'],  # Volume
-                    'TermSpread_t-1': latest_data['TermSpread_t-1']  # Term Spread
-                }
+                'const': 1,  # Add constant (intercept)
+                'Log_VIX_MA_1': latest_data['Log_VIX_MA_1'],     # 1-day VIX moving average
+                'Log_VIX_MA_5': latest_data['Log_VIX_MA_5'],     # 5-day VIX moving average
+                'Log_VIX_MA_10': latest_data['Log_VIX_MA_10'],   # 10-day VIX moving average
+                'Log_VIX_MA_22': latest_data['Log_VIX_MA_22'],   # 22-day VIX moving average
+                'Log_VIX_MA_66': latest_data['Log_VIX_MA_66'],   # 66-day VIX moving average
+                'SP500_Log_Return_1': latest_data['SP500_Log_Return_1'],   # 1-day S&P500 log return
+                'SP500_Log_Return_5': latest_data['SP500_Log_Return_5'],   # 5-day S&P500 log return
+                'SP500_Log_Return_10': latest_data['SP500_Log_Return_10'], # 10-day S&P500 log return
+                'SP500_Log_Return_22': latest_data['SP500_Log_Return_22'], # 22-day S&P500 log return
+                'SP500_Log_Return_66': latest_data['SP500_Log_Return_66'], # 66-day S&P500 log return
+                'SP500_Volume_Change': latest_data['SP500_Volume_Change'], # Volume change
+                'Log_Oil_Price': latest_data['Log_Oil_Price'],             # Log of oil price
+                'USD_Change': latest_data['USD_Change'],                   # USD change
+                'Term_Spread': latest_data['Term_Spread']                  # Term spread
+            }
             
             # Convert input data to DataFrame and add constant (if necessary)
             X_new_df = pd.DataFrame([X_new])
