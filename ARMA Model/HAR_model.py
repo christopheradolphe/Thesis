@@ -36,9 +36,14 @@ def train_all(data, forecast_horizon, folder_name='har_models', fernandes=False)
     for day in range(1,forecast_horizon+1):
         if fernandes:
             har_model = train_fernandes(data, day)
-        model_path = os.path.join(folder_name, f'har_model_{day}.pkl')
-        with open(model_path, 'wb') as f:
-            pickle.dump(har_model, f)       
+            model_path = os.path.join(folder_name, f'har_fernandes_model_{day}.pkl')
+            with open(model_path, 'wb') as f:
+                pickle.dump(har_model, f)       
+        else:
+            har_model = train(data, day)
+            model_path = os.path.join(folder_name, f'har_model_{day}.pkl')
+            with open(model_path, 'wb') as f:
+                pickle.dump(har_model, f) 
 
 
 def load(forecast_length, folder_name='har_models'):
