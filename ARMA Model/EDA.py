@@ -31,11 +31,9 @@ def print_heavily_correlated_features(df, threshold=0.7):
   # Print out the "heavily correlated" counts
   print(corr.count().sort_values(ascending=False) - 1)
 
-# Execute the function
-print_heavily_correlated_features(df_train)
-
-def remove_multicollinearity():
-  return
+def remove_multicollinearity(df):
+  # Execute the function
+  print_heavily_correlated_features(df)
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
 vix_targets = [
@@ -64,5 +62,7 @@ print(top5_VIX_t_plus_5)
 
 print("\nTop 5 variables correlated with VIX_t+34:")
 print(top5_VIX_t_plus_34)
+
+remove_multicollinearity(data)
 
 # correlation_matrix(data)

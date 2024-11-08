@@ -6,6 +6,8 @@ from statsmodels.tsa.arima.model import ARIMA
 import numpy as np
 import os
 import time
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
 
 def train_fernandes(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
     # Train data only in range specified by arguments
@@ -15,18 +17,23 @@ def train_fernandes(data, forecast_size, train_start_date='1993-01-19', train_en
      'SP500_Log_Return_10', 'SP500_Log_Return_22', 'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 'Term_Spread']]
     X = sm.add_constant(X)
     model = sm.OLS(y, X)
-    har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
+    har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 66})
     return har_model
 
 def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
     # Train data only in range specified by arguments
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
     y = train_data[f'VIX_t+{forecast_size}']
-    X = train_data[['Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 'Log_VIX_MA_22', 'Log_VIX_MA_66', 'SP500_Log_Return_1', 'SP500_Log_Return_5',
-     'SP500_Log_Return_10', 'SP500_Log_Return_22', 'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 'Term_Spread']]
+    X = train_data[['VIX_MA_1', 'VIX_MA_5', 'VIX_MA_10', 'VIX_MA_22',
+       'VIX_MA_66','Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 
+       'Log_VIX_MA_22', 'Log_VIX_MA_66', 'SP500_MA_1', 'SP500_Log_Return_1',
+       'SP500_MA_5', 'SP500_MA_10', 'SP500_MA_22', 'SP500_MA_66',
+       'SP500_Log_Return_5','SP500_Log_Return_10', 'SP500_Log_Return_22', 
+       'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 
+       'Term_Spread']]
     X = sm.add_constant(X)
     model = sm.OLS(y, X)
-    har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
+    har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 66})
     return har_model
 
 def train_all(data, forecast_horizon, folder_name='har_models', fernandes=False):
@@ -90,23 +97,57 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
         for h in range(1, max(forecast_horizons) + 1):
             har_model = load(h, fernandes=fernandes)
 
-            X_new = {
-                'const': 1,  # Add constant (intercept)
-                'Log_VIX_MA_1': latest_data['Log_VIX_MA_1'],     # 1-day VIX moving average
-                'Log_VIX_MA_5': latest_data['Log_VIX_MA_5'],     # 5-day VIX moving average
-                'Log_VIX_MA_10': latest_data['Log_VIX_MA_10'],   # 10-day VIX moving average
-                'Log_VIX_MA_22': latest_data['Log_VIX_MA_22'],   # 22-day VIX moving average
-                'Log_VIX_MA_66': latest_data['Log_VIX_MA_66'],   # 66-day VIX moving average
-                'SP500_Log_Return_1': latest_data['SP500_Log_Return_1'],   # 1-day S&P500 log return
-                'SP500_Log_Return_5': latest_data['SP500_Log_Return_5'],   # 5-day S&P500 log return
-                'SP500_Log_Return_10': latest_data['SP500_Log_Return_10'], # 10-day S&P500 log return
-                'SP500_Log_Return_22': latest_data['SP500_Log_Return_22'], # 22-day S&P500 log return
-                'SP500_Log_Return_66': latest_data['SP500_Log_Return_66'], # 66-day S&P500 log return
-                'SP500_Volume_Change': latest_data['SP500_Volume_Change'], # Volume change
-                'Log_Oil_Price': latest_data['Log_Oil_Price'],             # Log of oil price
-                'USD_Change': latest_data['USD_Change'],                   # USD change
-                'Term_Spread': latest_data['Term_Spread']                  # Term spread
-            }
+            if fernandes:
+                X_new = {
+                    'const': 1,  # Add constant (intercept)
+                    'Log_VIX_MA_1': latest_data['Log_VIX_MA_1'],     # 1-day VIX moving average
+                    'Log_VIX_MA_5': latest_data['Log_VIX_MA_5'],     # 5-day VIX moving average
+                    'Log_VIX_MA_10': latest_data['Log_VIX_MA_10'],   # 10-day VIX moving average
+                    'Log_VIX_MA_22': latest_data['Log_VIX_MA_22'],   # 22-day VIX moving average
+                    'Log_VIX_MA_66': latest_data['Log_VIX_MA_66'],   # 66-day VIX moving average
+                    'SP500_Log_Return_1': latest_data['SP500_Log_Return_1'],   # 1-day S&P500 log return
+                    'SP500_Log_Return_5': latest_data['SP500_Log_Return_5'],   # 5-day S&P500 log return
+                    'SP500_Log_Return_10': latest_data['SP500_Log_Return_10'], # 10-day S&P500 log return
+                    'SP500_Log_Return_22': latest_data['SP500_Log_Return_22'], # 22-day S&P500 log return
+                    'SP500_Log_Return_66': latest_data['SP500_Log_Return_66'], # 66-day S&P500 log return
+                    'SP500_Volume_Change': latest_data['SP500_Volume_Change'], # Volume change
+                    'Log_Oil_Price': latest_data['Log_Oil_Price'],             # Log of oil price
+                    'USD_Change': latest_data['USD_Change'],                   # USD change
+                    'Term_Spread': latest_data['Term_Spread']                  # Term spread
+                }
+            else:
+                X_new = {
+                    'const': 1,  # Add constant (intercept)
+                    # VIX Moving Averages
+                    'VIX_MA_1': latest_data['VIX_MA_1'],
+                    'VIX_MA_5': latest_data['VIX_MA_5'],
+                    'VIX_MA_10': latest_data['VIX_MA_10'],
+                    'VIX_MA_22': latest_data['VIX_MA_22'],
+                    'VIX_MA_66': latest_data['VIX_MA_66'],
+                    # Log VIX Moving Averages
+                    'Log_VIX_MA_1': latest_data['Log_VIX_MA_1'],
+                    'Log_VIX_MA_5': latest_data['Log_VIX_MA_5'],
+                    'Log_VIX_MA_10': latest_data['Log_VIX_MA_10'],
+                    'Log_VIX_MA_22': latest_data['Log_VIX_MA_22'],
+                    'Log_VIX_MA_66': latest_data['Log_VIX_MA_66'],
+                    # S&P 500 Moving Averages
+                    'SP500_MA_1': latest_data['SP500_MA_1'],
+                    'SP500_MA_5': latest_data['SP500_MA_5'],
+                    'SP500_MA_10': latest_data['SP500_MA_10'],
+                    'SP500_MA_22': latest_data['SP500_MA_22'],
+                    'SP500_MA_66': latest_data['SP500_MA_66'],
+                    # S&P 500 Log Returns
+                    'SP500_Log_Return_1': latest_data['SP500_Log_Return_1'],
+                    'SP500_Log_Return_5': latest_data['SP500_Log_Return_5'],
+                    'SP500_Log_Return_10': latest_data['SP500_Log_Return_10'],
+                    'SP500_Log_Return_22': latest_data['SP500_Log_Return_22'],
+                    'SP500_Log_Return_66': latest_data['SP500_Log_Return_66'],
+                    # Other Variables
+                    'SP500_Volume_Change': latest_data['SP500_Volume_Change'],
+                    'Log_Oil_Price': latest_data['Log_Oil_Price'],
+                    'USD_Change': latest_data['USD_Change'],
+                    'Term_Spread': latest_data['Term_Spread']
+                }
             
             # Convert input data to DataFrame and add constant (if necessary)
             X_new_df = pd.DataFrame([X_new])
@@ -283,9 +324,35 @@ def performance_summary(vix_data, fernandes=False):
 
     return metrics, errors_df
 
+def calculate_vif(X):
+    # Add a constant if not already added
+    if 'const' not in X.columns:
+        X = sm.add_constant(X)
+    
+    # Create a DataFrame to hold VIF values
+    vif_data = pd.DataFrame()
+    vif_data['Feature'] = X.columns
+    
+    # Calculate VIF for each feature
+    vif_data['VIF'] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+    
+    return vif_data
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
-train_all(data, 34)
-output_model_coefficients()
-generate_har_forecasts(data, start_date='2004-05-01', end_date='2008-10-30')
-performance_summary(data)
+# train_all(data, 34)
+# output_model_coefficients()
+# generate_har_forecasts(data, start_date='2004-05-01', end_date='2010-10-30')
+# performance_summary(data)
+# print(data.columns)
+
+# Assuming X is your DataFrame of predictors from the training data
+X = data[['VIX_MA_1', 'VIX_MA_5', 'VIX_MA_10', 'VIX_MA_22',
+                'VIX_MA_66','Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 
+                'Log_VIX_MA_22', 'Log_VIX_MA_66', 'SP500_MA_1', 'SP500_Log_Return_1',
+                'SP500_MA_5', 'SP500_MA_10', 'SP500_MA_22', 'SP500_MA_66',
+                'SP500_Log_Return_5','SP500_Log_Return_10', 'SP500_Log_Return_22', 
+                'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 
+                'Term_Spread']]
+
+vif_data = calculate_vif(X)
+print(vif_data)
