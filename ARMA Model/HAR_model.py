@@ -7,6 +7,17 @@ import numpy as np
 import os
 import time
 
+def train_fernandes(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
+    # Train data only in range specified by arguments
+    train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
+    y = np.log(train_data[f'VIX_t+{forecast_size}'])
+    X = train_data[['Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 'Log_VIX_MA_22', 'Log_VIX_MA_66', 'SP500_Log_Return_1', 'SP500_Log_Return_5',
+     'SP500_Log_Return_10', 'SP500_Log_Return_22', 'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 'Term_Spread']]
+    X = sm.add_constant(X)
+    model = sm.OLS(y, X)
+    har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
+    return har_model
+
 def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
     # Train data only in range specified by arguments
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
@@ -18,12 +29,13 @@ def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='20
     har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 22})
     return har_model
 
-def train_all(data, forecast_horizon, folder_name='har_models'):
+def train_all(data, forecast_horizon, folder_name='har_models', fernandes=False):
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
 
     for day in range(1,forecast_horizon+1):
-        har_model = train(data, day)
+        if fernandes:
+            har_model = train_fernandes(data, day)
         model_path = os.path.join(folder_name, f'har_model_{day}.pkl')
         with open(model_path, 'wb') as f:
             pickle.dump(har_model, f)       
