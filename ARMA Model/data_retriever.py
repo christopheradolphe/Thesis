@@ -9,20 +9,20 @@ fred = Fred(api_key='cdbebbf260397c58ad92162f048ac8eb')
 
 def load_vix_data(start_date='1990-01-02', end_date='2023-12-31'):
     vix_data = yf.download('^VIX', start=start_date, end=end_date)
-    vix_data = vix_data['Close'].dropna()  # Keep only the 'Close' column and drop NaN values
-    log_vix = np.log(vix_data)
-    log_vix = log_vix.to_frame(name='Log_VIX')
+    vix_data = vix_data[['Close']].dropna()  # Keep only the 'Close' column and drop NaN values
+    vix_data = vix_data.rename(columns={'Close': 'VIX_Close'})
+
+    log_vix = np.log(vix_data['VIX_Close']).to_frame(name='Log_VIX')
 
     # Calculate the averages over k days
     k_values = [1, 5, 10, 22, 66]
     for k in k_values:
         log_vix[f'Log_VIX_MA_{k}'] = log_vix['Log_VIX'].rolling(window=k).mean()
+        vix_data[f'VIX_MA_{k}'] = vix_data['VIX_Close'].rolling(window=k).mean()
     
     log_vix.drop(['Log_VIX'], axis = 1, inplace = True)
     
     vix_data = pd.concat([vix_data, log_vix], axis=1)
-
-    vix_data = vix_data.rename(columns={'Close': 'VIX_Close'})
 
     return vix_data
 
