@@ -257,14 +257,14 @@ def performance_summary(vix_data, fernandes=False):
         'Out_of_Sample_R_squared': out_of_sample_r_squared
     }
 
-    print(f"Performance Metrics for the 34th Trading Day Forecast:")
+    print(f"Performance Metrics for the {22 if fernandes else 34}th Trading Day Forecast:")
     for metric_name, metric_value in metrics.items():
         print(f"{metric_name}: {metric_value}")
 
     # Create a DataFrame for errors and actual vs. forecasted values
     errors_df = pd.DataFrame({
         'Forecast_Date': forecast_dates,
-        'Actual_Date': [t + pd.offsets.BusinessDay(34) for t in forecast_dates],
+        'Actual_Date': [t + pd.offsets.BusinessDay(22 if fernandes else 34) for t in forecast_dates],
         'Actual_Value': actual_values,
         'Forecast_Value': forecast_values,
         'Error': errors,
@@ -279,5 +279,5 @@ def performance_summary(vix_data, fernandes=False):
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
 train_all(data, 34, fernandes=True)
 output_model_coefficients()
-generate_har_forecasts(data, start_date='2004-05-01', end_date='2015-10-30', fernandes=True)
-performance_summary(data)
+generate_har_forecasts(data, start_date='2004-05-01', end_date='2013-10-30', fernandes=True)
+performance_summary(data, fernandes=True)
