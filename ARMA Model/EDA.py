@@ -9,6 +9,34 @@ def correlation_matrix(data):
   plt.title('Correlation Matrix Heatmap')
   plt.show()
 
+def print_heavily_correlated_features(df, threshold=0.7):
+  """
+  For each feature in "df", this function counts the number of features that
+  have a correlation coefficient with that is higher than "threshold".
+
+  Parameters
+  ----------
+    df: pandas DataFrame type
+        Contains the features for several data points
+    threshold: float type
+        he threshold for which "heavily correlated" is defined.
+  """
+
+  corr = df.corr(numeric_only=True).abs()  # calculate the correlation matrix
+  ### FUNCTION APPLIED TO ENTIRE DATAFRAME****
+  print(corr)
+  corr = corr[corr > threshold]  # a mask of features that are heavily correlated (all non important ones become nan)
+  print(corr)
+
+  # Print out the "heavily correlated" counts
+  print(corr.count().sort_values(ascending=False) - 1)
+
+# Execute the function
+print_heavily_correlated_features(df_train)
+
+def remove_multicollinearity():
+  return
+
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
 vix_targets = [
     "VIX_t+1", "VIX_t+2", "VIX_t+3", "VIX_t+4", "VIX_t+5", "VIX_t+6", "VIX_t+7", 
@@ -27,8 +55,8 @@ r_squared_VIX_t_plus_5 = corr_with_VIX_t_plus_5 ** 2
 r_squared_VIX_t_plus_34 = corr_with_VIX_t_plus_34 ** 2
 
 # Rank the variables based on R² values
-top5_VIX_t_plus_5 = r_squared_VIX_t_plus_5.sort_values(ascending=False).head(15)
-top5_VIX_t_plus_34 = r_squared_VIX_t_plus_34.sort_values(ascending=False).head(15)
+top5_VIX_t_plus_5 = r_squared_VIX_t_plus_5.sort_values(ascending=False).head(25)
+top5_VIX_t_plus_34 = r_squared_VIX_t_plus_34.sort_values(ascending=False).head(25)
 
 # Display the top 5 variables
 print("Top 5 variables correlated with VIX_t+5:")

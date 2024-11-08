@@ -203,12 +203,20 @@ def performance_summary(vix_data, fernandes=False):
         # Check if the actual value exists in vix_data
         if t_plus_34 in vix_data.index:
             # Get the actual VIX value at t_plus_34
-            if isinstance(vix_data, pd.Series):
-                actual_value = np.log(vix_data.loc[t_plus_34])
-            elif isinstance(vix_data, pd.DataFrame):
-                actual_value = np.log(vix_data.loc[t_plus_34, 'VIX_Close'])  # Adjust 'VIX' to the correct column name
+            if fernandes:
+                if isinstance(vix_data, pd.Series):
+                    actual_value = np.log(vix_data.loc[t_plus_34])
+                elif isinstance(vix_data, pd.DataFrame):
+                    actual_value = np.log(vix_data.loc[t_plus_34, 'VIX_Close'])  # Adjust 'VIX' to the correct column name
+                else:
+                    continue
             else:
-                continue
+                if isinstance(vix_data, pd.Series):
+                    actual_value = vix_data.loc[t_plus_34]
+                elif isinstance(vix_data, pd.DataFrame):
+                    actual_value = vix_data.loc[t_plus_34, 'VIX_Close'] # Adjust 'VIX' to the correct column name
+                else:
+                    continue
 
             # Store the values
             actual_values.append(actual_value)
@@ -277,7 +285,7 @@ def performance_summary(vix_data, fernandes=False):
 
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
-train_all(data, 34, fernandes=True)
+train_all(data, 34)
 output_model_coefficients()
-generate_har_forecasts(data, start_date='2004-05-01', end_date='2013-10-30', fernandes=True)
-performance_summary(data, fernandes=True)
+generate_har_forecasts(data, start_date='2004-05-01', end_date='2008-10-30')
+performance_summary(data)
