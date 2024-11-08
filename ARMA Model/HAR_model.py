@@ -145,7 +145,7 @@ def performance_summary(vix_data):
     - vix_data: Series or DataFrame containing the actual VIX values with dates as index.
 
     Returns:
-    - metrics: Dictionary containing MFE, SDFE, MSE, MAE, and R^2 for the 34th trading day forecast.
+    - metrics: Dictionary containing MFE, SDFE, MSE, MAE, RMSE, MAPE, and R^2 for the 34th trading day forecast.
     - errors_df: DataFrame containing the errors and actual vs. forecasted values for each date.
     """
     import pandas as pd
@@ -199,33 +199,41 @@ def performance_summary(vix_data):
     # Calculate Errors
     errors = forecast_values - actual_values
     absolute_errors = np.abs(errors)
+    percentage_errors = np.abs(errors / actual_values) * 100  # For MAPE
 
     # Calculate performance metrics
     mfe = np.mean(errors)
     sdfe = np.std(errors, ddof=1)  # Sample standard deviation
     mse = np.mean(errors ** 2)
+    rmse = np.sqrt(mse)
     mae = np.mean(absolute_errors)
+    mape = np.mean(percentage_errors)
 
-    # Mincer-Zarnowitz Regression
+    # Mincer-Zarnowitz Regression for Out-of-Sample R²
     X = sm.add_constant(forecast_values)  # Add intercept
     model = sm.OLS(actual_values, X).fit()
     r_squared = model.rsquared
+
+    # Calculate Out-of-Sample R² using total variance in actual values
+    ss_res = np.sum(errors ** 2)
+    ss_tot = np.sum((actual_values - np.mean(actual_values)) ** 2)
+    out_of_sample_r_squared = 1 - (ss_res / ss_tot)
 
     # Create a dictionary of metrics
     metrics = {
         'MFE': mfe,
         'SDFE': sdfe,
         'MSE': mse,
+        'RMSE': rmse,
         'MAE': mae,
-        'R_squared': r_squared
+        'MAPE': mape,
+        'R_squared': r_squared,
+        'Out_of_Sample_R_squared': out_of_sample_r_squared
     }
 
     print(f"Performance Metrics for the 34th Trading Day Forecast:")
-    print(f"MFE: {mfe}")
-    print(f"SDFE: {sdfe}")
-    print(f"MSE: {mse}")
-    print(f"MAE: {mae}")
-    print(f"Mincer-Zarnowitz R^2: {r_squared}")
+    for metric_name, metric_value in metrics.items():
+        print(f"{metric_name}: {metric_value}")
 
     # Create a DataFrame for errors and actual vs. forecasted values
     errors_df = pd.DataFrame({
@@ -235,10 +243,12 @@ def performance_summary(vix_data):
         'Forecast_Value': forecast_values,
         'Error': errors,
         'Absolute_Error': absolute_errors,
+        'Percentage_Error': percentage_errors
     })
     errors_df.set_index('Forecast_Date', inplace=True)
 
     return metrics, errors_df
+
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
 # train_all(data, 34)

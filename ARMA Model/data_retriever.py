@@ -18,8 +18,6 @@ def load_vix_data(start_date='1990-01-02', end_date='2023-12-31'):
     for k in k_values:
         log_vix[f'Log_VIX_MA_{k}'] = log_vix['Log_VIX'].rolling(window=k).mean()
     
-    log_vix.drop(['Log_VIX'], axis = 1, inplace = True)
-    
     vix_data = pd.concat([vix_data, log_vix], axis=1)
 
     vix_data = vix_data.rename(columns={'Close': 'VIX_Close'})
