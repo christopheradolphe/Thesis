@@ -46,8 +46,11 @@ def train_all(data, forecast_horizon, folder_name='har_models', fernandes=False)
                 pickle.dump(har_model, f) 
 
 
-def load(forecast_length, folder_name='har_models'):
-    model_path = os.path.join(folder_name, f'har_model_{forecast_length}.pkl')
+def load(forecast_length, folder_name='har_models', fernandes=False):
+    if fernandes:
+        model_path = os.path.join(folder_name, f'har_fernandes_model_{forecast_length}.pkl')
+    else:
+        model_path = os.path.join(folder_name, f'har_model_{forecast_length}.pkl')
     if not os.path.exists(model_path):
         raise FileNotFoundError(f'Model for horizon {forecast_length} not found at {model_path}')
     
@@ -55,7 +58,7 @@ def load(forecast_length, folder_name='har_models'):
         loaded_model = pickle.load(f)
     return loaded_model
 
-def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1, 35)):
+def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1, 35), fernandes=False):
     """
     Generate 34-day forecasts using the HAR model with forecasted exogenous variables.
 
@@ -85,7 +88,7 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
 
         # Now, forecast VIX using the forecasted exogenous variables
         for h in range(1, max(forecast_horizons) + 1):
-            har_model = load(h)
+            har_model = load(h, fernandes=fernandes)
 
             X_new = {
                 'const': 1,  # Add constant (intercept)
@@ -130,11 +133,14 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
 
     return forecasts_df
 
-def output_model_coefficients(forecasts=34, folder_name='har_models'):
+def output_model_coefficients(forecasts=34, folder_name='har_models', fernandes=False):
     har_coefficients_list = []
 
     for day in range(1, forecasts+1):
-        model_path = os.path.join(folder_name, f'har_model_{day}.pkl')
+        if fernandes:
+            model_path = os.path.join(folder_name, f'har_fernandes_model_{day}.pkl')
+        else:
+            model_path = os.path.join(folder_name, f'har_model_{day}.pkl')
 
         with open(model_path, 'rb') as f:
             har_model = pickle.load(f)
@@ -154,7 +160,7 @@ def output_model_coefficients(forecasts=34, folder_name='har_models'):
 
     return
 
-def performance_summary(vix_data):
+def performance_summary(vix_data, fernandes=False):
     """
     Calculate performance metrics for the 34th trading day forecast.
 
@@ -186,18 +192,21 @@ def performance_summary(vix_data):
             continue  # Skip if the horizon is not available
 
         # Get the forecasted value for the 34th horizon
-        forecast_value = forecasts_df.loc[t, '34']
+        if fernandes:
+            forecast_value = forecasts_df.loc[t, '22']
+        else:
+            forecast_value = forecasts_df.loc[t, '34']
 
         # Calculate the date 34 business days ahead
-        t_plus_34 = t + pd.offsets.BusinessDay(34)
+        t_plus_34 = t + pd.offsets.BusinessDay(22 if fernandes else 34)
 
         # Check if the actual value exists in vix_data
         if t_plus_34 in vix_data.index:
             # Get the actual VIX value at t_plus_34
             if isinstance(vix_data, pd.Series):
-                actual_value = vix_data.loc[t_plus_34]
+                actual_value = np.log(vix_data.loc[t_plus_34])
             elif isinstance(vix_data, pd.DataFrame):
-                actual_value = vix_data.loc[t_plus_34, 'VIX_Close']  # Adjust 'VIX' to the correct column name
+                actual_value = np.log(vix_data.loc[t_plus_34, 'VIX_Close'])  # Adjust 'VIX' to the correct column name
             else:
                 continue
 
@@ -268,7 +277,7 @@ def performance_summary(vix_data):
 
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
-# train_all(data, 34)
-# output_model_coefficients()
-# generate_har_forecasts(data, start_date='2004-05-01', end_date='2015-10-30')
+train_all(data, 34, fernandes=True)
+output_model_coefficients()
+generate_har_forecasts(data, start_date='2004-05-01', end_date='2015-10-30', fernandes=True)
 performance_summary(data)
