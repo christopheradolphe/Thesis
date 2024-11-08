@@ -39,7 +39,16 @@ def load_sp500_data(start_date='1990-01-02', end_date='2023-12-31'):
     k_values = [1, 5, 10, 22, 66]
     for k in k_values:
         sp500_close[f'SP500_Log_Return_{k}'] = np.log(sp500_close['SP500_Close'] / sp500_close['SP500_Close'].shift(k))
+
+        # Daily simple returns
+        sp500_close['Daily_Return'] = sp500_close['SP500_Close'].pct_change()
+
+        # Average daily simple return as a moving average over k days
+        sp500_close[f'SP500_MA_{k}'] = sp500_close['Daily_Return'].rolling(window=k).mean()
     
+    # Drop the intermediate Daily_Return column as it's no longer needed
+    sp500_close = sp500_close.drop(columns=['Daily_Return'])
+
     # Calculate first difference of logorithm for S&P 500 Volume
     sp500_volume = sp500_volume.replace(0, np.nan)
     sp500_volume = sp500_volume.dropna()
@@ -47,8 +56,13 @@ def load_sp500_data(start_date='1990-01-02', end_date='2023-12-31'):
     sp500_volume_log_diff = sp500_volume_log.diff()
     sp500_volume_log_diff.name = 'SP500_Volume_Change'
 
-    # Combine Close and Volume data
-    sp500_data_combined = pd.concat([sp500_close['SP500_Close'], sp500_close[[col for col in sp500_close.columns if 'SP500_Log_Return' in col]], sp500_volume, sp500_volume_log_diff], axis=1)
+
+    # Combine the S&P 500 close, log returns, average daily returns, volume, and volume change data
+    sp500_data_combined = pd.concat(
+        [sp500_close, sp500_volume, sp500_volume_log_diff],
+        axis=1
+    )
+
     return sp500_data_combined
 
 def load_oil_data(start_date='1990-01-02', end_date='2023-12-31'):
