@@ -7,6 +7,7 @@ import numpy as np
 import os
 import time
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from sklearn.preprocessing import StandardScaler
 
 
 def train_fernandes(data, forecast_size, train_start_date='1993-01-19', train_end_date='2004-03-31'):
@@ -31,8 +32,11 @@ def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='20
        'SP500_Log_Return_5','SP500_Log_Return_10', 'SP500_Log_Return_22', 
        'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 
        'Term_Spread']]
-    X = sm.add_constant(X)
-    model = sm.OLS(y, X)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    X_scaled = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
+    X_scaled = sm.add_constant(X_scaled)
+    model = sm.OLS(y, X_scaled)
     har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 66})
     return har_model
 
@@ -339,20 +343,19 @@ def calculate_vif(X):
     return vif_data
 
 data = pd.read_csv('/Users/christopheradolphe/Desktop/Thesis/Latest_VIX_Data.csv', index_col=0)
-# train_all(data, 34)
-# output_model_coefficients()
-# generate_har_forecasts(data, start_date='2004-05-01', end_date='2010-10-30')
-# performance_summary(data)
-# print(data.columns)
+train_all(data, 34)
+output_model_coefficients()
+generate_har_forecasts(data, start_date='2004-05-01', end_date='2007-10-30')
+performance_summary(data)
 
 # Assuming X is your DataFrame of predictors from the training data
-X = data[['VIX_MA_1', 'VIX_MA_5', 'VIX_MA_10', 'VIX_MA_22',
-                'VIX_MA_66','Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 
-                'Log_VIX_MA_22', 'Log_VIX_MA_66', 'SP500_MA_1', 'SP500_Log_Return_1',
-                'SP500_MA_5', 'SP500_MA_10', 'SP500_MA_22', 'SP500_MA_66',
-                'SP500_Log_Return_5','SP500_Log_Return_10', 'SP500_Log_Return_22', 
-                'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 
-                'Term_Spread']]
+# X = data[['VIX_MA_1', 'VIX_MA_5', 'VIX_MA_10', 'VIX_MA_22',
+#                 'VIX_MA_66','Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 
+#                 'Log_VIX_MA_22', 'Log_VIX_MA_66', 'SP500_MA_1', 'SP500_Log_Return_1',
+#                 'SP500_MA_5', 'SP500_MA_10', 'SP500_MA_22', 'SP500_MA_66',
+#                 'SP500_Log_Return_5','SP500_Log_Return_10', 'SP500_Log_Return_22', 
+#                 'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 
+#                 'Term_Spread']]
 
-vif_data = calculate_vif(X)
-print(vif_data)
+# vif_data = calculate_vif(X)
+# print(vif_data)
