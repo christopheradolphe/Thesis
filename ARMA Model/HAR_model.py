@@ -32,13 +32,25 @@ def train(data, forecast_size, train_start_date='1993-01-19', train_end_date='20
        'SP500_Log_Return_5','SP500_Log_Return_10', 'SP500_Log_Return_22', 
        'SP500_Log_Return_66', 'SP500_Volume_Change', 'Log_Oil_Price', 'USD_Change', 
        'Term_Spread']]
+    # Columns to scale
+    non_vix_columns = ['SP500_MA_1', 'SP500_Log_Return_1', 'SP500_MA_5', 'SP500_MA_10', 
+                    'SP500_MA_22', 'SP500_MA_66', 'SP500_Log_Return_5', 'SP500_Log_Return_10', 
+                    'SP500_Log_Return_22', 'SP500_Log_Return_66', 'SP500_Volume_Change', 
+                    'Log_Oil_Price', 'USD_Change', 'Term_Spread']
+    # Columns to leave unscaled
+    vix_columns = ['VIX_MA_1', 'VIX_MA_5', 'VIX_MA_10', 'VIX_MA_22', 'VIX_MA_66', 
+                'Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 'Log_VIX_MA_22', 'Log_VIX_MA_66']
+    # Scale only the non-VIX columns
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    X_scaled = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
-    X_scaled = sm.add_constant(X_scaled)
-    model = sm.OLS(y, X_scaled)
+    X_scaled_non_vix = scaler.fit_transform(X[non_vix_columns])
+    X_scaled_non_vix = pd.DataFrame(X_scaled_non_vix, columns=non_vix_columns, index=X.index)
+    # Combine scaled non-VIX columns with unscaled VIX columns
+    X_scaled_final = pd.concat([X[vix_columns], X_scaled_non_vix], axis=1)
+    model = sm.OLS(y, X_scaled_final)
     har_model = model.fit(cov_type='HAC', cov_kwds={'maxlags': 66})
-    return har_model
+    if forecast_size == 34:
+        print(har_model.rsquared)
+    return har_model, scaler
 
 def train_all(data, forecast_horizon, folder_name='har_models', fernandes=False):
     if not os.path.exists(folder_name):
@@ -48,38 +60,49 @@ def train_all(data, forecast_horizon, folder_name='har_models', fernandes=False)
         if fernandes:
             har_model = train_fernandes(data, day)
             model_path = os.path.join(folder_name, f'har_fernandes_model_{day}.pkl')
+            scaler_path = os.path.join(folder_name, f'har_fernandes_scaler_{day}.pkl')  
             with open(model_path, 'wb') as f:
                 pickle.dump(har_model, f)       
+            with open(scaler_path, 'wb') as f:
+                pickle.dump(scaler, f)
         else:
-            har_model = train(data, day)
+            har_model,scaler = train(data, day)
             model_path = os.path.join(folder_name, f'har_model_{day}.pkl')
+            scaler_path = os.path.join(folder_name, f'har_scaler_{day}.pkl')
             with open(model_path, 'wb') as f:
                 pickle.dump(har_model, f) 
+            with open(scaler_path, 'wb') as f:
+                pickle.dump(scaler, f)
 
 
 def load(forecast_length, folder_name='har_models', fernandes=False):
     if fernandes:
         model_path = os.path.join(folder_name, f'har_fernandes_model_{forecast_length}.pkl')
+        scaler_path = os.path.join(folder_name, f'har_fernandes_scaler_{forecast_length}.pkl')
     else:
         model_path = os.path.join(folder_name, f'har_model_{forecast_length}.pkl')
+        scaler_path = os.path.join(folder_name, f'har_scaler_{forecast_length}.pkl')
     if not os.path.exists(model_path):
         raise FileNotFoundError(f'Model for horizon {forecast_length} not found at {model_path}')
+    if not os.path.exists(scaler_path):
+        raise FileNotFoundError(f'Scaler for horizon {forecast_length} not found at {scaler_path}')
     
     with open(model_path, 'rb') as f:
         loaded_model = pickle.load(f)
-    return loaded_model
+    with open(scaler_path, 'rb') as f:
+        loaded_scaler = pickle.load(f)
+    return loaded_model, loaded_scaler
+
 
 def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1, 35), fernandes=False):
     """
-    Generate 34-day forecasts using the HAR model with forecasted exogenous variables.
+    Generate forecasts using the HAR model with forecasted exogenous variables.
 
     Parameters:
     - data: DataFrame containing the historical data.
     - start_date: Start date for forecasting.
     - end_date: End date for forecasting.
     - forecast_horizons: Range of forecast horizons (default is 1 to 34).
-    - folder_name: Directory where the HAR models are stored.
-
 
     Returns:
     - forecasts_df: DataFrame containing forecasts for each date and horizon.
@@ -89,6 +112,14 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
     forecasts = []
     test_dates = data[start_date:end_date].index
 
+    # Define columns
+    non_vix_columns = ['SP500_MA_1', 'SP500_Log_Return_1', 'SP500_MA_5', 'SP500_MA_10', 
+                    'SP500_MA_22', 'SP500_MA_66', 'SP500_Log_Return_5', 'SP500_Log_Return_10', 
+                    'SP500_Log_Return_22', 'SP500_Log_Return_66', 'SP500_Volume_Change', 
+                    'Log_Oil_Price', 'USD_Change', 'Term_Spread']
+    vix_columns = ['VIX_MA_1', 'VIX_MA_5', 'VIX_MA_10', 'VIX_MA_22', 'VIX_MA_66', 
+                'Log_VIX_MA_1', 'Log_VIX_MA_5', 'Log_VIX_MA_10', 'Log_VIX_MA_22', 'Log_VIX_MA_66']
+
     for t in test_dates:
         # Get data up to date t
         latest_data = data.loc[t]
@@ -96,10 +127,9 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
         # Initialize forecast dictionary for date t
         daily_forecast = {'Date': t}
 
-
         # Now, forecast VIX using the forecasted exogenous variables
-        for h in range(1, max(forecast_horizons) + 1):
-            har_model = load(h, fernandes=fernandes)
+        for h in forecast_horizons:
+            har_model, scaler = load(h, fernandes=fernandes)
 
             if fernandes:
                 X_new = {
@@ -120,8 +150,8 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
                     'Term_Spread': latest_data['Term_Spread']                  # Term spread
                 }
             else:
-                X_new = {
-                    'const': 1,  # Add constant (intercept)
+                # Prepare the input features
+                X_new = pd.DataFrame([{
                     # VIX Moving Averages
                     'VIX_MA_1': latest_data['VIX_MA_1'],
                     'VIX_MA_5': latest_data['VIX_MA_5'],
@@ -151,16 +181,25 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
                     'Log_Oil_Price': latest_data['Log_Oil_Price'],
                     'USD_Change': latest_data['USD_Change'],
                     'Term_Spread': latest_data['Term_Spread']
-                }
-            
-            # Convert input data to DataFrame and add constant (if necessary)
-            X_new_df = pd.DataFrame([X_new])
-    
-            # Make prediction using the trained HAR model
-            prediction = har_model.predict(X_new_df).values[0]
-            
+                }])
 
-            daily_forecast[str(h)] = prediction
+                # Scale non-VIX columns using the loaded scaler
+                X_new_non_vix = scaler.transform(X_new[non_vix_columns])
+                X_new_non_vix = pd.DataFrame(X_new_non_vix, columns=non_vix_columns, index=X_new.index)
+
+                # Combine unscaled VIX columns with scaled non-VIX columns
+                X_new_scaled = pd.concat([X_new[vix_columns], X_new_non_vix], axis=1)
+
+                # Add constant term
+                X_new_scaled = sm.add_constant(X_new_scaled)
+
+                # Ensure the columns are in the same order as during training
+                X_new_scaled = X_new_scaled[har_model.params.index]
+
+                # Make prediction using the trained HAR model
+                prediction = har_model.predict(X_new_scaled).values[0]
+
+                daily_forecast[str(h)] = prediction
 
         forecasts.append(daily_forecast)
 
@@ -177,6 +216,7 @@ def generate_har_forecasts(data, start_date, end_date, forecast_horizons=range(1
     forecasts_df.to_csv('HAR_Forecasts.csv', index=True)
 
     return forecasts_df
+
 
 def output_model_coefficients(forecasts=34, folder_name='har_models', fernandes=False):
     har_coefficients_list = []
