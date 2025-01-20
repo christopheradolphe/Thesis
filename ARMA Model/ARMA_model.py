@@ -4,8 +4,10 @@ import yfinance as yf
 import pickle
 from statsmodels.tsa.ar_model import AutoReg
 import numpy as np
+import matplotlib.pyplot as plt
 
-def train(data, train_start_date='1993-01-19', train_end_date='2004-03-31'):
+
+def train(data, train_start_date='1993-01-19', train_end_date='2003-12-31'):
     # Modify train set to only include certain dates
     train_data = data[(data.index >= train_start_date) & (data.index <= train_end_date)]
     model = ARIMA(train_data, order=(2,0,2))
@@ -302,3 +304,35 @@ calculate_resid(data)
 forecasts_df = generate_forecasts(data, load(), '2004-03-31', '2015-12-31', forecast_horizons=range(7, 35))
 #forecasts_df = cheng_compare_forecasts(data, load())
 performance_summary(forecasts_df, data)
+forecasts_df.index = pd.to_datetime(forecasts_df.index)
+actual_vix = data
+
+# Ensure actual VIX data is in datetime format
+actual_vix.index = pd.to_datetime(actual_vix.index)
+
+# Extract 34-day forecast from the forecasts DataFrame
+forecast_34_day = forecasts_df['34']
+
+# Create a new DataFrame aligning the actual and forecasted values
+aligned_data = pd.DataFrame({
+    'Forecast_Date': forecast_34_day.index,
+    'Actual_Date': forecast_34_day.index + pd.offsets.BusinessDay(34),
+    '34-Day Forecast': forecast_34_day
+})
+aligned_data.set_index('Actual_Date', inplace=True)
+aligned_data['Actual VIX'] = actual_vix.reindex(aligned_data.index)
+
+# Drop rows where actual VIX data is missing
+aligned_data.dropna(inplace=True)
+
+# Plot actual VIX vs. 34-day forecasted VIX
+plt.figure(figsize=(12, 6))
+plt.plot(aligned_data.index, aligned_data['Actual VIX'], label='Actual VIX', linewidth=2)
+plt.plot(aligned_data.index, aligned_data['34-Day Forecast'], label='34-Day Ahead Forecast', linestyle='--', linewidth=2)
+plt.title('Actual VIX vs. 34-Day Ahead Forecast', fontsize=16)
+plt.xlabel('Date', fontsize=12)
+plt.ylabel('VIX Value', fontsize=12)
+plt.legend(fontsize=12)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
